@@ -11,7 +11,7 @@
 
 The system serves two tightly integrated functions:
 1. **AI Balance & Runway Tracker**: Continuously monitors prepaid credit balances, promotional grants, token burn velocity, and runway timelines across AI inference platforms.
-2. **Coding Agent Harness Synchronizer**: Safely synchronizes configurations, models, prompts, and credential vaults for AI coding agents (**OpenCode**, **Pi**, and **OMP** / Oh My OpenCode) across multiple Macs via private Apple iCloud Drive.
+2. **Coding Agent Harness Synchronizer**: Safely synchronizes configurations, models, prompts, and credential vaults for AI coding agents (**OpenCode**, **Pi**, **OMP**, and **T3**) across multiple Macs via private Apple iCloud Drive.
 
 ### Core Subsystems & Data Flow
 
@@ -37,7 +37,7 @@ The system serves two tightly integrated functions:
        ┌──────────────────────────────┼──────────────────────────────┐
        ▼                              ▼                              ▼
 [NSStatusItem Gauges]        [Popover Detail Cards]        [iCloud Sync Engine]
-(Percentage / Currency)     (Runway, burn pacing, tabs)   (OpenCode + Pi + OMP)
+(Percentage / Currency)     (Runway, burn pacing, tabs)   (OpenCode + Pi + OMP + T3)
                                                                      │
                                                                      ▼
                                                           [SyncChangeLog & AFM]
@@ -184,7 +184,7 @@ Compile the native release binary and assemble the application bundle:
 | `Sources/ProviderTabsView.swift` | SwiftUI drop-down popover view, provider switcher tabs, and runway gauges. |
 | `Sources/MenuUI.swift` | Settings pane, onboarding view, sync status row, Paper Design System buttons. |
 | `Sources/BrandMark.swift` | Custom vector icon rendering, brand accent palettes, and app icons. |
-| `Sources/ICloudSync.swift` | Cross-device iCloud Drive synchronization for coding harnesses (OpenCode, Pi, OMP) and settings. |
+| `Sources/ICloudSync.swift` | Cross-device iCloud Drive synchronization for coding harnesses (OpenCode, Pi, OMP, T3) and settings. |
 | `Sources/SyncChangeLog.swift` | Precise YAML/JSON diffing, provider change summaries, and relative time formatting. |
 | `Sources/CodexBarPacing.swift` | Spend-based runway calculations and token burn velocity derivation for CodexBar. |
 | `Sources/Changelog.swift` | Offline-first multi-version changelog viewer with Markdown formatting. |

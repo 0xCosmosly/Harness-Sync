@@ -28,6 +28,10 @@ enum SyncChangeLog {
             "vertex": "Vertex AI",
             "aistudio": "AI Studio",
             "opencode": "OpenCode",
+            "t3": "T3",
+            "t3code": "T3 Code",
+            "claudeagent": "Claude Agent",
+            "antigravity": "Antigravity",
             "anthropic": "Anthropic",
             "openai": "OpenAI",
             "groq": "Groq",
@@ -178,6 +182,9 @@ enum SyncChangeLog {
         let providersDict: [String: Any]
         if let p = json["providers"] as? [String: Any] {
             providersDict = p
+        } else if let manifest = json["manifest"] as? [String: Any],
+                  let p = manifest["providers"] as? [String: Any] {
+            providersDict = p
         } else if let p = json["provider"] as? [String: Any] {
             providersDict = p
         } else {
@@ -190,7 +197,7 @@ enum SyncChangeLog {
                 if let modelsDict = pObj["models"] as? [String: Any] {
                     result[pKey] = Array(modelsDict.keys).sorted()
                 } else if let modelsArr = pObj["models"] as? [[String: Any]] {
-                    let ids = modelsArr.compactMap { $0["id"] as? String ?? $0["name"] as? String }
+                    let ids = modelsArr.compactMap { $0["id"] as? String ?? $0["slug"] as? String ?? $0["name"] as? String }
                     result[pKey] = ids
                 } else if let modelsArr = pObj["models"] as? [String] {
                     result[pKey] = modelsArr

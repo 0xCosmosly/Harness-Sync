@@ -121,7 +121,7 @@ In **Settings → Menu Bar Presentation**:
 <p align="center">
   <img src="docs/images/settings.png" width="560" alt="Settings & Coding Agent Harness Sync" />
   <br />
-  <em><b>Settings & Sync Management</b>: Toggle iCloud sync, enable OpenCode, Pi, and OMP, and view cross-machine sync status.</em>
+  <em><b>Settings & Sync Management</b>: Toggle iCloud sync, enable OpenCode, Pi, OMP, and T3, and view cross-machine sync status.</em>
 </p>
 
 If you use multiple Macs (such as a MacBook Pro for travel and a Mac Studio at your desk), Harness Sync keeps your AI coding agents perfectly synchronized over your private Apple iCloud Drive.
@@ -130,6 +130,7 @@ If you use multiple Macs (such as a MacBook Pro for travel and a Mac Studio at y
 When iCloud Sync is enabled, a dedicated **Sync** tab appears immediately to the right of Overview in your popover:
 1. **Status Badge**: Displays `Active` or `Synced` with green pulse indicators.
 2. **Enabled Harnesses**: Clean checklist showing active integrations:
+   - `Harness - T3`
    - `Harness - OMP`
    - `Harness - Pi`
    - `Harness - OpenCode`
@@ -149,6 +150,7 @@ When iCloud Sync is enabled, a dedicated **Sync** tab appears immediately to the
 
 | Coding Harness | Local Configuration Path | What Syncs Across Macs |
 | :--- | :--- | :--- |
+| **T3** *(T3 Code / T3)* | `~/.t3/userdata/settings.json`<br/>`~/.t3/userdata/model-manifest.json` | Settings configs, model manifest, keybindings, client & desktop settings |
 | **OMP** *(Oh My OpenCode / Oh My Prompt)* | `~/.omp/models.yml`<br/>`~/.omp/config.yml` | Model definitions, custom providers, prompts, and settings |
 | **Pi Coding Agent** | `~/.pi/models.json` | Agent presets, provider endpoints, and model configurations |
 | **OpenCode** | `~/.config/opencode/opencode.json` | Global OpenCode configuration, defaults, and provider keys |
@@ -161,6 +163,7 @@ When iCloud Sync is enabled, a dedicated **Sync** tab appears immediately to the
    - ☑️ **OpenCode**
    - ☑️ **Pi**
    - ☑️ **OMP**
+   - ☑️ **T3**
 4. *(Optional)* Check **Sync API keys & credentials** if you want your credential vault mirrored across machines.
 
 > [!TIP]
@@ -289,7 +292,7 @@ Harness Sync inspects your provider account's initial credit allocation or lates
 Yes. Open **Settings → Add Custom Provider**. Enter the provider's name or paste a cURL command from their documentation; on-device intelligence parses the endpoint structure, auth headers, and response balance fields automatically.
 
 **Q: How does Coding Agent Harness Sync work?**  
-When enabled in the **Sync** tab or Settings, Harness Sync watches local config directories for OpenCode, Pi, and OMP. Changes made on one Mac are safely mirrored to your other Macs via your personal iCloud Drive, complete with pre-write `.bak` safety backups.
+When enabled in the **Sync** tab or Settings, Harness Sync watches local config directories for OpenCode, Pi, OMP, and T3. Changes made on one Mac are safely mirrored to your other Macs via your personal iCloud Drive, complete with pre-write `.bak` safety backups.
 
 **Q: How often do balances refresh?**  
 Balances refresh automatically in the background every 5 minutes. You can also click **Refresh** or **Refresh All** in the menu bar popover at any time to update immediately.

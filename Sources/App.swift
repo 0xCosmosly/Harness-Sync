@@ -200,6 +200,14 @@ final class APIBarApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindow
         get { ICloudSync.shared.isOmpCredentialsSyncEnabled }
         set { ICloudSync.shared.setOmpCredentialsSyncEnabled(newValue) }
     }
+    var isT3SyncEnabled: Bool {
+        get { ICloudSync.shared.isT3SyncEnabled }
+        set { ICloudSync.shared.setT3SyncEnabled(newValue) }
+    }
+    var isT3CredentialsSyncEnabled: Bool {
+        get { ICloudSync.shared.isT3CredentialsSyncEnabled }
+        set { ICloudSync.shared.setT3CredentialsSyncEnabled(newValue) }
+    }
     var isScriptableSyncEnabled: Bool {
         get { ICloudSync.shared.isScriptableSyncEnabled }
         set { ICloudSync.shared.setScriptableSyncEnabled(newValue) }
@@ -238,6 +246,12 @@ final class APIBarApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindow
     }
     func setOmpCredentialsSyncEnabled(_ enabled: Bool) {
         ICloudSync.shared.setOmpCredentialsSyncEnabled(enabled)
+    }
+    func setT3SyncEnabled(_ enabled: Bool) {
+        ICloudSync.shared.setT3SyncEnabled(enabled)
+    }
+    func setT3CredentialsSyncEnabled(_ enabled: Bool) {
+        ICloudSync.shared.setT3CredentialsSyncEnabled(enabled)
     }
     func setScriptableSyncEnabled(_ enabled: Bool) {
         ICloudSync.shared.setScriptableSyncEnabled(enabled)

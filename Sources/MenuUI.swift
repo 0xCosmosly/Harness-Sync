@@ -581,6 +581,9 @@ struct SyncCardContent: View {
         if app.isOmpSyncEnabled {
             rows.append(("OMP", app.isOmpCredentialsSyncEnabled ? "Config + credentials" : "Config only"))
         }
+        if app.isT3SyncEnabled {
+            rows.append(("T3", app.isT3CredentialsSyncEnabled ? "Config + credentials" : "Config only"))
+        }
         return rows
     }
 
@@ -1229,13 +1232,14 @@ struct IntegrationSyncSection: View {
     var compact = false
 
     private var anySyncEnabled: Bool {
-        app.isOpenCodeSyncEnabled || app.isPiSyncEnabled || app.isOmpSyncEnabled
+        app.isOpenCodeSyncEnabled || app.isPiSyncEnabled || app.isOmpSyncEnabled || app.isT3SyncEnabled
     }
 
     private var credentialsEnabled: Bool {
         if app.isOpenCodeSyncEnabled && app.isOpenCodeCredentialsSyncEnabled { return true }
         if app.isPiSyncEnabled && app.isPiCredentialsSyncEnabled { return true }
         if app.isOmpSyncEnabled && app.isOmpCredentialsSyncEnabled { return true }
+        if app.isT3SyncEnabled && app.isT3CredentialsSyncEnabled { return true }
         return false
     }
 
@@ -1246,6 +1250,7 @@ struct IntegrationSyncSection: View {
                 if app.isOpenCodeSyncEnabled { app.setOpenCodeCredentialsSyncEnabled(enabled) }
                 if app.isPiSyncEnabled { app.setPiCredentialsSyncEnabled(enabled) }
                 if app.isOmpSyncEnabled { app.setOmpCredentialsSyncEnabled(enabled) }
+                if app.isT3SyncEnabled { app.setT3CredentialsSyncEnabled(enabled) }
             }
         )
     }
@@ -1282,6 +1287,15 @@ struct IntegrationSyncSection: View {
                             app.setOmpCredentialsSyncEnabled(false)
                         }
                         app.setOmpSyncEnabled(enabled)
+                    }
+                ))
+                Toggle("T3", isOn: Binding(
+                    get: { app.isT3SyncEnabled },
+                    set: { enabled in
+                        if enabled && anySyncEnabled && !credentialsEnabled {
+                            app.setT3CredentialsSyncEnabled(false)
+                        }
+                        app.setT3SyncEnabled(enabled)
                     }
                 ))
             }

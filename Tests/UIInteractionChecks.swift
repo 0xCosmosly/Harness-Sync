@@ -763,10 +763,68 @@ import SwiftUI
         try? FileManager.default.removeItem(at: mockOmpCredsFile)
         unsetenv("APIBAR_OMP_CREDENTIALS_FILE")
 
+        // Test T3 harness configuration & credentials sync
+        let localT3Dir = ICloudSync.shared.localT3DirectoryURL
+        try? FileManager.default.createDirectory(at: localT3Dir, withIntermediateDirectories: true)
+        let initialT3Settings = "{\"favorites\": [{\"provider\": \"antigravity\", \"model\": \"gemini-3.8-flash\"}]}"
+        let initialT3Manifest = "{\"manifest\": {\"providers\": {\"antigravity\": {\"models\": [{\"slug\": \"gemini-3.8-flash\"}]}}}}"
+        let mockT3CredsFile = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("mock_t3_creds_\(UUID().uuidString).json")
+        let initialT3CredsJSON = "{\"__clerk_client_jwt\":\"test-t3-jwt-token\"}"
+        try initialT3CredsJSON.write(to: mockT3CredsFile, atomically: true, encoding: .utf8)
+        setenv("APIBAR_T3_CREDENTIALS_FILE", mockT3CredsFile.path, 1)
+
+        let localT3SettingsFile = localT3Dir.appendingPathComponent("settings.json")
+        let localT3ManifestFile = localT3Dir.appendingPathComponent("model-manifest.json")
+        try initialT3Settings.write(to: localT3SettingsFile, atomically: true, encoding: .utf8)
+        try initialT3Manifest.write(to: localT3ManifestFile, atomically: true, encoding: .utf8)
+
+        ICloudSync.shared.setT3SyncEnabled(false)
+        UserDefaults.standard.removeObject(forKey: ICloudSync.t3EnabledKey)
+        precondition(ICloudSync.shared.isT3SyncEnabled == false, "T3 sync must be disabled by default")
+        ICloudSync.shared.setT3SyncEnabled(true)
+        precondition(ICloudSync.shared.isT3SyncEnabled == true)
+        precondition(ICloudSync.shared.isT3CredentialsSyncEnabled == true)
+
+        let pushedT3Success = await ICloudSync.shared.pushLocalState()
+        precondition(pushedT3Success == true, "pushLocalState failed for T3")
+        guard let cloudT3Dir = ICloudSync.shared.cloudT3DirectoryURL,
+              let cloudT3CredsFile = ICloudSync.shared.cloudT3CredentialsURL else {
+            preconditionFailure("T3 iCloud URLs not resolved")
+        }
+        let cloudT3SettingsFile = cloudT3Dir.appendingPathComponent("settings.json")
+        let cloudT3ManifestFile = cloudT3Dir.appendingPathComponent("model-manifest.json")
+        precondition(FileManager.default.fileExists(atPath: cloudT3SettingsFile.path), "t3/settings.json missing in iCloud")
+        precondition(FileManager.default.fileExists(atPath: cloudT3ManifestFile.path), "t3/model-manifest.json missing in iCloud")
+        precondition(FileManager.default.fileExists(atPath: cloudT3CredsFile.path), "t3-credentials.json missing in iCloud vault")
+        precondition((try? String(contentsOf: cloudT3SettingsFile, encoding: .utf8)) == initialT3Settings)
+        precondition((try? String(contentsOf: cloudT3ManifestFile, encoding: .utf8)) == initialT3Manifest)
+        precondition((try? String(contentsOf: cloudT3CredsFile, encoding: .utf8)) == initialT3CredsJSON)
+
+        // Simulate Device B updating t3/model-manifest.json in iCloud
+        let updatedT3Manifest = "{\"manifest\": {\"providers\": {\"antigravity\": {\"models\": [{\"slug\": \"gemini-3.8-flash\"}, {\"slug\": \"gemini-4-carbon\"}]}}}}"
+        try updatedT3Manifest.write(to: cloudT3ManifestFile, atomically: true, encoding: .utf8)
+        let t3FutureDate = Date().addingTimeInterval(10)
+        try FileManager.default.setAttributes([.modificationDate: t3FutureDate], ofItemAtPath: cloudT3ManifestFile.path)
+
+        let didMergeT3 = await ICloudSync.shared.pullAndMerge()
+        precondition(didMergeT3 == true, "pullAndMerge did not report T3 merge changes")
+        precondition((try? String(contentsOf: localT3ManifestFile, encoding: .utf8)) == updatedT3Manifest, "Local model-manifest.json did not update with Device B changes")
+        let t3BackupFile = localT3Dir.appendingPathComponent("model-manifest.json.bak")
+        precondition(FileManager.default.fileExists(atPath: t3BackupFile.path), "model-manifest.json.bak backup missing")
+        precondition((try? String(contentsOf: t3BackupFile, encoding: .utf8)) == initialT3Manifest, "model-manifest.json.bak content mismatch")
+
+        ICloudSync.shared.setT3SyncEnabled(false)
+        precondition(ICloudSync.shared.isT3SyncEnabled == false)
+        UserDefaults.standard.removeObject(forKey: ICloudSync.t3EnabledKey)
+        try? FileManager.default.removeItem(at: localT3Dir)
+        try? FileManager.default.removeItem(at: mockT3CredsFile)
+        unsetenv("APIBAR_T3_CREDENTIALS_FILE")
+
         // Harness toggles must travel with settings: a harness enabled on the
         // other Mac has to start pulling here, otherwise the cloud config
         // updates but is never applied.
         precondition(pushedSettings.ompSyncEnabled != nil, "Pushed settings must carry the OMP toggle")
+        precondition(pushedSettings.t3SyncEnabled != nil, "Pushed settings must carry the T3 toggle")
         precondition(pushedSettings.scriptableSyncEnabled != nil, "Pushed settings must carry the Scriptable toggle")
         ICloudSync.shared.setOmpSyncEnabled(false)
         precondition(ICloudSync.shared.isOmpSyncEnabled == false)
@@ -793,6 +851,9 @@ import SwiftUI
         let ompOff = ICloudSettings(sortMode: "balance", mergeIcons: true, ompSyncEnabled: false)
         precondition(base.configFingerprint != ompOff.configFingerprint,
                      "A harness toggle change must alter the fingerprint")
+        let t3Off = ICloudSettings(sortMode: "balance", mergeIcons: true, t3SyncEnabled: false)
+        precondition(base.configFingerprint != t3Off.configFingerprint,
+                     "A T3 toggle change must alter the fingerprint")
         precondition(ICloudSync.shared.statusBadge == "Active" || ICloudSync.shared.statusBadge == "Synced")
         precondition(app.iCloudStatusMessage.contains("Synced") || app.iCloudStatusMessage.contains("ago") || app.iCloudStatusMessage.contains("just now"))
 

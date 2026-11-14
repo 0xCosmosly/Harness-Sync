@@ -16,6 +16,8 @@ struct ICloudSettings: Codable, Equatable {
     var piCredentialsEnabled: Bool?
     var ompSyncEnabled: Bool?
     var ompCredentialsEnabled: Bool?
+    var t3SyncEnabled: Bool?
+    var t3CredentialsEnabled: Bool?
     var scriptableSyncEnabled: Bool?
     var lastModified: Date
     var deviceName: String
@@ -34,6 +36,8 @@ struct ICloudSettings: Codable, Equatable {
             piCredentialsEnabled.map { "pic=\($0)" },
             ompSyncEnabled.map { "omp=\($0)" },
             ompCredentialsEnabled.map { "ompc=\($0)" },
+            t3SyncEnabled.map { "t3=\($0)" },
+            t3CredentialsEnabled.map { "t3c=\($0)" },
             scriptableSyncEnabled.map { "script=\($0)" }
         ].compactMap { $0 }.sorted().joined(separator: "|")
     }
@@ -49,6 +53,8 @@ struct ICloudSettings: Codable, Equatable {
         piCredentialsEnabled: Bool? = nil,
         ompSyncEnabled: Bool? = nil,
         ompCredentialsEnabled: Bool? = nil,
+        t3SyncEnabled: Bool? = nil,
+        t3CredentialsEnabled: Bool? = nil,
         scriptableSyncEnabled: Bool? = nil,
         lastModified: Date = Date(),
         deviceName: String = Host.current().localizedName ?? "Mac"
@@ -63,6 +69,8 @@ struct ICloudSettings: Codable, Equatable {
         self.piCredentialsEnabled = piCredentialsEnabled
         self.ompSyncEnabled = ompSyncEnabled
         self.ompCredentialsEnabled = ompCredentialsEnabled
+        self.t3SyncEnabled = t3SyncEnabled
+        self.t3CredentialsEnabled = t3CredentialsEnabled
         self.scriptableSyncEnabled = scriptableSyncEnabled
         self.lastModified = lastModified
         self.deviceName = deviceName
@@ -78,9 +86,10 @@ struct ICloudManifest: Codable, Equatable {
     var hasOpenCode: Bool?
     var hasPi: Bool?
     var hasOmp: Bool?
+    var hasT3: Bool?
     var appBuildTimestamp: Double?
 
-    init(version: Int = 1, lastModified: Date = Date(), deviceId: String, deviceName: String, providerCount: Int, hasOpenCode: Bool? = nil, hasPi: Bool? = nil, hasOmp: Bool? = nil, appBuildTimestamp: Double? = nil) {
+    init(version: Int = 1, lastModified: Date = Date(), deviceId: String, deviceName: String, providerCount: Int, hasOpenCode: Bool? = nil, hasPi: Bool? = nil, hasOmp: Bool? = nil, hasT3: Bool? = nil, appBuildTimestamp: Double? = nil) {
         self.version = version
         self.lastModified = lastModified
         self.deviceId = deviceId
@@ -89,6 +98,7 @@ struct ICloudManifest: Codable, Equatable {
         self.hasOpenCode = hasOpenCode
         self.hasPi = hasPi
         self.hasOmp = hasOmp
+        self.hasT3 = hasT3
         self.appBuildTimestamp = appBuildTimestamp
     }
 }
@@ -137,6 +147,8 @@ final class ICloudSync: ObservableObject {
     static let piCredentialsEnabledKey = "ICloudSyncPiCredentialsEnabled"
     static let ompEnabledKey = "ICloudSyncOmpEnabled"
     static let ompCredentialsEnabledKey = "ICloudSyncOmpCredentialsEnabled"
+    static let t3EnabledKey = "ICloudSyncT3Enabled"
+    static let t3CredentialsEnabledKey = "ICloudSyncT3CredentialsEnabled"
     static let scriptableEnabledKey = "ICloudSyncScriptableEnabled"
     static let lastSyncKey = "ICloudSyncLastDate"
     static let lastChangeDateKey = "ICloudSyncLastChangeDate"
@@ -155,6 +167,8 @@ final class ICloudSync: ObservableObject {
     @Published var isPiCredentialsSyncEnabled: Bool = true
     @Published var isOmpSyncEnabled: Bool = false
     @Published var isOmpCredentialsSyncEnabled: Bool = true
+    @Published var isT3SyncEnabled: Bool = false
+    @Published var isT3CredentialsSyncEnabled: Bool = true
     @Published var isScriptableSyncEnabled: Bool = true
     @Published private(set) var lastSyncDate: Date? = nil
     @Published private(set) var statusMessage: String = "Disabled"
@@ -227,6 +241,8 @@ final class ICloudSync: ObservableObject {
     private var ompMonitorFD: Int32 = -1
     private var codexBarMonitorSource: DispatchSourceFileSystemObject?
     private var codexBarMonitorFD: Int32 = -1
+    private var t3MonitorSource: DispatchSourceFileSystemObject?
+    private var t3MonitorFD: Int32 = -1
     private var isPerformingSync: Bool = false
     private var lastPushedDate: Date = .distantPast
 
@@ -369,6 +385,40 @@ final class ICloudSync: ObservableObject {
         vaultDirectoryURL?.appendingPathComponent("omp-credentials.json")
     }
 
+    var localT3DirectoryURL: URL {
+        if let custom = ProcessInfo.processInfo.environment["APIBAR_T3_DIR"], !custom.isEmpty {
+            return URL(fileURLWithPath: custom, isDirectory: true)
+        }
+        if let custom = ProcessInfo.processInfo.environment["T3_USERDATA_DIR"], !custom.isEmpty {
+            return URL(fileURLWithPath: custom, isDirectory: true)
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".t3/userdata", isDirectory: true)
+    }
+
+    var cloudT3DirectoryURL: URL? {
+        baseDirectoryURL?.appendingPathComponent("t3", isDirectory: true)
+    }
+
+    var localT3CredentialsURL: URL? {
+        if let custom = ProcessInfo.processInfo.environment["APIBAR_T3_CREDENTIALS_FILE"], !custom.isEmpty {
+            return URL(fileURLWithPath: custom)
+        }
+        let clerkURL = localT3DirectoryURL.appendingPathComponent("clerk/clerk-tokens.json")
+        if FileManager.default.fileExists(atPath: clerkURL.path) {
+            return clerkURL
+        }
+        let authURL = localT3DirectoryURL.appendingPathComponent("auth.json")
+        if FileManager.default.fileExists(atPath: authURL.path) {
+            return authURL
+        }
+        return nil
+    }
+
+    var cloudT3CredentialsURL: URL? {
+        vaultDirectoryURL?.appendingPathComponent("t3-credentials.json")
+    }
+
     init() {
         self.isEnabled = UserDefaults.standard.bool(forKey: Self.enabledKey)
         self.isOpenCodeSyncEnabled = UserDefaults.standard.bool(forKey: Self.openCodeEnabledKey)
@@ -388,6 +438,12 @@ final class ICloudSync: ObservableObject {
             self.isOmpCredentialsSyncEnabled = true
         } else {
             self.isOmpCredentialsSyncEnabled = UserDefaults.standard.bool(forKey: Self.ompCredentialsEnabledKey)
+        }
+        self.isT3SyncEnabled = UserDefaults.standard.bool(forKey: Self.t3EnabledKey)
+        if UserDefaults.standard.object(forKey: Self.t3CredentialsEnabledKey) == nil {
+            self.isT3CredentialsSyncEnabled = true
+        } else {
+            self.isT3CredentialsSyncEnabled = UserDefaults.standard.bool(forKey: Self.t3CredentialsEnabledKey)
         }
         if UserDefaults.standard.object(forKey: Self.scriptableEnabledKey) == nil {
             self.isScriptableSyncEnabled = true
@@ -447,6 +503,9 @@ final class ICloudSync: ObservableObject {
             if isOmpSyncEnabled {
                 startOmpMonitoring()
             }
+            if isT3SyncEnabled {
+                startT3Monitoring()
+            }
             Task { await syncNow() }
         }
     }
@@ -467,12 +526,16 @@ final class ICloudSync: ObservableObject {
             if isOmpSyncEnabled {
                 startOmpMonitoring()
             }
+            if isT3SyncEnabled {
+                startT3Monitoring()
+            }
             Task { await syncNow() }
         } else {
             stopMonitoring()
             stopOpenCodeMonitoring()
             stopPiMonitoring()
             stopOmpMonitoring()
+            stopT3Monitoring()
             updateStatusMessage()
         }
     }
@@ -566,6 +629,26 @@ final class ICloudSync: ObservableObject {
             }
         } else {
             stopOmpMonitoring()
+        }
+    }
+
+    func setT3SyncEnabled(_ enabled: Bool) {
+        guard isT3SyncEnabled != enabled else { return }
+        isT3SyncEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: Self.t3EnabledKey)
+        if enabled && isEnabled {
+            startT3Monitoring()
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                // Pull cloud state first so a newly enabled client never overwrites cloud config
+                let pulled = await self.pullAndMerge()
+                let pushed = await self.pushLocalState()
+                if pulled || pushed {
+                    self.updateStatusMessage()
+                }
+            }
+        } else {
+            stopT3Monitoring()
         }
     }
 
@@ -822,6 +905,50 @@ final class ICloudSync: ObservableObject {
         }
     }
 
+    func setT3CredentialsSyncEnabled(_ enabled: Bool) {
+        guard isT3CredentialsSyncEnabled != enabled else { return }
+        isT3CredentialsSyncEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: Self.t3CredentialsEnabledKey)
+        if enabled && isEnabled && isT3SyncEnabled {
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                let pulled = await self.pullAndMerge()
+                let pushed = await self.pushLocalState()
+                if pulled || pushed {
+                    self.updateStatusMessage()
+                }
+            }
+        }
+    }
+
+    func exportT3Credentials() -> Data? {
+        if let custom = localT3CredentialsURL {
+            return try? Data(contentsOf: custom)
+        }
+        let clerkURL = localT3DirectoryURL.appendingPathComponent("clerk/clerk-tokens.json")
+        if FileManager.default.fileExists(atPath: clerkURL.path) {
+            return try? Data(contentsOf: clerkURL)
+        }
+        let authURL = localT3DirectoryURL.appendingPathComponent("auth.json")
+        if FileManager.default.fileExists(atPath: authURL.path) {
+            return try? Data(contentsOf: authURL)
+        }
+        return nil
+    }
+
+    @discardableResult
+    func importT3Credentials(data: Data) -> Bool {
+        let destURL = localT3CredentialsURL ?? localT3DirectoryURL.appendingPathComponent("clerk/clerk-tokens.json")
+        do {
+            try FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: destURL, options: .atomic)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: destURL.path)
+            return true
+        } catch {
+            return false
+        }
+    }
+
     private func findOmpBinary() -> String? {
         let home = FileManager.default.homeDirectoryForCurrentUser
         if let pathEnv = ProcessInfo.processInfo.environment["PATH"] {
@@ -1075,6 +1202,17 @@ final class ICloudSync: ObservableObject {
                 if let remoteOmpCreds = remoteSettings.ompCredentialsEnabled, remoteOmpCreds != isOmpCredentialsSyncEnabled {
                     isOmpCredentialsSyncEnabled = remoteOmpCreds
                     UserDefaults.standard.set(remoteOmpCreds, forKey: Self.ompCredentialsEnabledKey)
+                    didChangeLocally = true
+                }
+                if let remoteT3 = remoteSettings.t3SyncEnabled, remoteT3 != isT3SyncEnabled {
+                    isT3SyncEnabled = remoteT3
+                    UserDefaults.standard.set(remoteT3, forKey: Self.t3EnabledKey)
+                    remoteT3 ? startT3Monitoring() : stopT3Monitoring()
+                    didChangeLocally = true
+                }
+                if let remoteT3Creds = remoteSettings.t3CredentialsEnabled, remoteT3Creds != isT3CredentialsSyncEnabled {
+                    isT3CredentialsSyncEnabled = remoteT3Creds
+                    UserDefaults.standard.set(remoteT3Creds, forKey: Self.t3CredentialsEnabledKey)
                     didChangeLocally = true
                 }
                 if let remoteOpenCode = remoteSettings.openCodeSyncEnabled, remoteOpenCode != isOpenCodeSyncEnabled {
@@ -1429,6 +1567,57 @@ final class ICloudSync: ObservableObject {
             }
         }
 
+        // 7. Pull T3 configuration
+        if isT3SyncEnabled,
+           let cloudT3 = cloudT3DirectoryURL,
+           FileManager.default.fileExists(atPath: cloudT3.path) {
+            let localT3 = localT3DirectoryURL
+            let configFiles = ["settings.json", "client-settings.json", "desktop-settings.json", "keybindings.json", "model-manifest.json", "connection-catalog.json"]
+            for file in configFiles {
+                let remoteFile = cloudT3.appendingPathComponent(file)
+                guard FileManager.default.fileExists(atPath: remoteFile.path) else { continue }
+                let localFile = localT3.appendingPathComponent(file)
+
+                let shouldCopy: Bool
+                if !FileManager.default.fileExists(atPath: localFile.path) {
+                    shouldCopy = true
+                } else if let remoteAttrs = try? FileManager.default.attributesOfItem(atPath: remoteFile.path),
+                          let localAttrs = try? FileManager.default.attributesOfItem(atPath: localFile.path),
+                          let remoteDate = remoteAttrs[.modificationDate] as? Date,
+                          let localDate = localAttrs[.modificationDate] as? Date {
+                    shouldCopy = remoteDate > localDate
+                } else {
+                    shouldCopy = false
+                }
+
+                if shouldCopy, let data = try? Data(contentsOf: remoteFile), !data.isEmpty {
+                    let localData = try? Data(contentsOf: localFile)
+                    if localData != data {
+                        try? FileManager.default.createDirectory(at: localT3, withIntermediateDirectories: true)
+                        if FileManager.default.fileExists(atPath: localFile.path) {
+                            let backupURL = localT3.appendingPathComponent("\(file).bak")
+                            try? FileManager.default.removeItem(at: backupURL)
+                            try? FileManager.default.copyItem(at: localFile, to: backupURL)
+                        }
+                        try? data.write(to: localFile, options: .atomic)
+                        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: localFile.path)
+                        didChangeLocally = true
+                    }
+                }
+            }
+        }
+
+        // 7b. Pull T3 credentials
+        if isT3SyncEnabled && isT3CredentialsSyncEnabled,
+           let cloudCreds = cloudT3CredentialsURL,
+           FileManager.default.fileExists(atPath: cloudCreds.path) {
+            if let data = try? Data(contentsOf: cloudCreds), !data.isEmpty {
+                if importT3Credentials(data: data) {
+                    didChangeLocally = true
+                }
+            }
+        }
+
         if didChangeLocally {
             let now = Date()
             lastSyncDate = now
@@ -1510,6 +1699,8 @@ final class ICloudSync: ObservableObject {
                     piCredentialsEnabled: isPiCredentialsSyncEnabled,
                     ompSyncEnabled: isOmpSyncEnabled,
                     ompCredentialsEnabled: isOmpCredentialsSyncEnabled,
+                    t3SyncEnabled: isT3SyncEnabled,
+                    t3CredentialsEnabled: isT3CredentialsSyncEnabled,
                     scriptableSyncEnabled: isScriptableSyncEnabled,
                     lastModified: localSettingsTS,
                     deviceName: deviceName
@@ -1538,6 +1729,7 @@ final class ICloudSync: ObservableObject {
                         if old?.mergeIcons != new.mergeIcons { specifics.append("menu bar icon merging") }
                         if old?.removedProviders != new.removedProviders { specifics.append("provider selection") }
                         if old?.ompSyncEnabled != new.ompSyncEnabled { specifics.append("OMP sync") }
+                        if old?.t3SyncEnabled != new.t3SyncEnabled { specifics.append("T3 sync") }
                         if old?.piSyncEnabled != new.piSyncEnabled { specifics.append("Pi sync") }
                         if old?.openCodeSyncEnabled != new.openCodeSyncEnabled { specifics.append("OpenCode sync") }
                         if old?.scriptableSyncEnabled != new.scriptableSyncEnabled { specifics.append("widget sync") }
@@ -1734,6 +1926,65 @@ final class ICloudSync: ObservableObject {
                 }
             }
 
+            // 7. Write T3 configuration
+            if isT3SyncEnabled, let cloudT3 = cloudT3DirectoryURL {
+                let localT3 = localT3DirectoryURL
+                let configFiles = ["settings.json", "client-settings.json", "desktop-settings.json", "keybindings.json", "model-manifest.json", "connection-catalog.json"]
+                var createdCloudDir = false
+
+                for file in configFiles {
+                    let localFile = localT3.appendingPathComponent(file)
+                    guard FileManager.default.fileExists(atPath: localFile.path) else { continue }
+                    let cloudFile = cloudT3.appendingPathComponent(file)
+
+                    let shouldPush: Bool
+                    if !FileManager.default.fileExists(atPath: cloudFile.path) {
+                        shouldPush = true
+                    } else if let remoteAttrs = try? FileManager.default.attributesOfItem(atPath: cloudFile.path),
+                               let localAttrs = try? FileManager.default.attributesOfItem(atPath: localFile.path),
+                               let remoteDate = remoteAttrs[.modificationDate] as? Date,
+                               let localDate = localAttrs[.modificationDate] as? Date {
+                        shouldPush = localDate > remoteDate
+                    } else {
+                        shouldPush = false
+                    }
+
+                    if shouldPush, let data = try? Data(contentsOf: localFile), !data.isEmpty {
+                        if !createdCloudDir {
+                            try? FileManager.default.createDirectory(at: cloudT3, withIntermediateDirectories: true)
+                            try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cloudT3.path)
+                            createdCloudDir = true
+                        }
+                        let cloudData = try? Data(contentsOf: cloudFile)
+                        if cloudData != data {
+                            try? data.write(to: cloudFile, options: .atomic)
+                            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: cloudFile.path)
+                            didTransferAny = true
+                            if file == "model-manifest.json" {
+                                let phrases = SyncChangeLog.modelConfigChanges(oldData: cloudData, newData: data, filename: file, fallback: "Updated T3 \(file)")
+                                changed.append(contentsOf: phrases)
+                            } else {
+                                changed.append("Updated T3 \(file)")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 7b. Write T3 credentials if enabled
+            if isT3SyncEnabled && isT3CredentialsSyncEnabled,
+               let cloudCreds = cloudT3CredentialsURL {
+                if let data = exportT3Credentials(), !data.isEmpty {
+                    let cloudData = try? Data(contentsOf: cloudCreds)
+                    if cloudData != data {
+                        try? data.write(to: cloudCreds, options: .atomic)
+                        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: cloudCreds.path)
+                        didTransferAny = true
+                        changed.append("Updated T3 credentials")
+                    }
+                }
+            }
+
             // 7. Write manifest.json. Only rewrite it when its content actually
             // changed: an unconditional write on every balance tick wakes the
             // other Mac's monitor, which pulls, pushes, and wakes us back —
@@ -1757,6 +2008,11 @@ final class ICloudSync: ObservableObject {
                         FileManager.default.fileExists(atPath: localOmpDirectoryURL.appendingPathComponent("config.yml").path) ||
                         FileManager.default.fileExists(atPath: localOmpDirectoryURL.appendingPathComponent("models.json").path)
                     ),
+                    hasT3: isT3SyncEnabled && (
+                        FileManager.default.fileExists(atPath: localT3DirectoryURL.appendingPathComponent("settings.json").path) ||
+                        FileManager.default.fileExists(atPath: localT3DirectoryURL.appendingPathComponent("model-manifest.json").path) ||
+                        (isT3CredentialsSyncEnabled && exportT3Credentials() != nil)
+                    ),
                     appBuildTimestamp: AppUpdater.localBuildDate.timeIntervalSince1970
                 )
                 let data = try JSONEncoder().encode(manifest)
@@ -1773,6 +2029,7 @@ final class ICloudSync: ObservableObject {
                         && previous.hasOpenCode == manifest.hasOpenCode
                         && previous.hasPi == manifest.hasPi
                         && previous.hasOmp == manifest.hasOmp
+                        && previous.hasT3 == manifest.hasT3
                         && previous.appBuildTimestamp == manifest.appBuildTimestamp
                 }
                 if !stableFieldsMatch {
@@ -2051,4 +2308,46 @@ final class ICloudSync: ObservableObject {
             codexBarMonitorFD = -1
         }
     }
+    func startT3Monitoring() {
+        stopT3Monitoring()
+        guard isEnabled && isT3SyncEnabled else { return }
+        let url = localT3DirectoryURL
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+
+        let fd = open(url.path, O_EVTONLY)
+        guard fd >= 0 else { return }
+        t3MonitorFD = fd
+
+        let source = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: fd,
+            eventMask: [.write, .extend, .attrib, .rename, .delete],
+            queue: DispatchQueue.global(qos: .utility)
+        )
+
+        source.setEventHandler { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self = self, self.isEnabled, self.isT3SyncEnabled, !self.isPerformingSync else { return }
+                self.schedulePush()
+            }
+        }
+
+        source.setCancelHandler {
+            close(fd)
+        }
+
+        t3MonitorSource = source
+        source.resume()
+    }
+
+    func stopT3Monitoring() {
+        if let source = t3MonitorSource {
+            source.cancel()
+            t3MonitorSource = nil
+        }
+        if t3MonitorFD >= 0 {
+            close(t3MonitorFD)
+            t3MonitorFD = -1
+        }
+    }
 }
+

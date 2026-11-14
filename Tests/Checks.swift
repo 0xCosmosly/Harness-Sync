@@ -1168,6 +1168,17 @@ func syncChangeLogChecks() throws {
     )
     precondition(jsonDiff == ["Mistral updated with 2 models"], "Got \(jsonDiff)")
 
+    // Model config T3 manifest diffing
+    let t3ManifestOld = "{\"manifest\": {\"providers\": {\"antigravity\": {\"models\": [{\"slug\": \"gemini-3.8-flash\"}]}}}}"
+    let t3ManifestNew = "{\"manifest\": {\"providers\": {\"antigravity\": {\"models\": [{\"slug\": \"gemini-3.8-flash\"}, {\"slug\": \"gemini-4-carbon\"}]}}}}"
+    let t3ManifestDiff = SyncChangeLog.modelConfigChanges(
+        oldData: t3ManifestOld.data(using: .utf8),
+        newData: t3ManifestNew.data(using: .utf8)!,
+        filename: "model-manifest.json",
+        fallback: "Updated T3 model-manifest.json"
+    )
+    precondition(t3ManifestDiff == ["Antigravity updated with 1 model"], "Got \(t3ManifestDiff)")
+
     // Relative time string formatting
     let testNow = Date()
     precondition(SyncChangeLog.relativeTimeString(from: testNow, relativeTo: testNow) == "just now")
