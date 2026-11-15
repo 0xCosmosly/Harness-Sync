@@ -150,7 +150,7 @@ When iCloud Sync is enabled, a dedicated **Sync** tab appears immediately to the
 
 | Coding Harness | Local Configuration Path | What Syncs Across Macs |
 | :--- | :--- | :--- |
-| **T3** *(T3 Code / T3)* | `~/.t3/userdata/settings.json`<br/>`~/.t3/userdata/model-manifest.json` | Settings configs, model manifest, keybindings, client & desktop settings |
+| **T3** *(T3 Code / T3)* | `~/.t3/userdata/settings.json`<br/>`~/.t3/userdata/model-manifest.json` | Settings configs, model manifest, keybindings, client settings |
 | **OMP** *(Oh My OpenCode / Oh My Prompt)* | `~/.omp/models.yml`<br/>`~/.omp/config.yml` | Model definitions, custom providers, prompts, and settings |
 | **Pi Coding Agent** | `~/.pi/models.json` | Agent presets, provider endpoints, and model configurations |
 | **OpenCode** | `~/.config/opencode/opencode.json` | Global OpenCode configuration, defaults, and provider keys |

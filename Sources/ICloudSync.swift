@@ -245,6 +245,7 @@ final class ICloudSync: ObservableObject {
     private var t3MonitorFD: Int32 = -1
     private var isPerformingSync: Bool = false
     private var lastPushedDate: Date = .distantPast
+    private var lastKnownT3Mtimes: [String: Date] = [:]
 
     var deviceId: String {
         if let id = UserDefaults.standard.string(forKey: Self.deviceIdKey) {
@@ -1572,7 +1573,7 @@ final class ICloudSync: ObservableObject {
            let cloudT3 = cloudT3DirectoryURL,
            FileManager.default.fileExists(atPath: cloudT3.path) {
             let localT3 = localT3DirectoryURL
-            let configFiles = ["settings.json", "client-settings.json", "desktop-settings.json", "keybindings.json", "model-manifest.json", "connection-catalog.json"]
+            let configFiles = ["settings.json", "client-settings.json", "keybindings.json", "model-manifest.json"]
             for file in configFiles {
                 let remoteFile = cloudT3.appendingPathComponent(file)
                 guard FileManager.default.fileExists(atPath: remoteFile.path) else { continue }
@@ -1929,7 +1930,7 @@ final class ICloudSync: ObservableObject {
             // 7. Write T3 configuration
             if isT3SyncEnabled, let cloudT3 = cloudT3DirectoryURL {
                 let localT3 = localT3DirectoryURL
-                let configFiles = ["settings.json", "client-settings.json", "desktop-settings.json", "keybindings.json", "model-manifest.json", "connection-catalog.json"]
+                let configFiles = ["settings.json", "client-settings.json", "keybindings.json", "model-manifest.json"]
                 var createdCloudDir = false
 
                 for file in configFiles {
@@ -2314,6 +2315,23 @@ final class ICloudSync: ObservableObject {
         let url = localT3DirectoryURL
         guard FileManager.default.fileExists(atPath: url.path) else { return }
 
+        // Seed initial timestamps for tracked T3 files so directory noise does not trigger pushes
+        let trackedFiles = ["settings.json", "client-settings.json", "keybindings.json", "model-manifest.json"]
+        var currentMtimes: [String: Date] = [:]
+        for file in trackedFiles {
+            let filePath = url.appendingPathComponent(file).path
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: filePath),
+               let mdate = attrs[.modificationDate] as? Date {
+                currentMtimes[file] = mdate
+            }
+        }
+        if let credsURL = localT3CredentialsURL,
+           let attrs = try? FileManager.default.attributesOfItem(atPath: credsURL.path),
+           let mdate = attrs[.modificationDate] as? Date {
+            currentMtimes["credentials"] = mdate
+        }
+        lastKnownT3Mtimes = currentMtimes
+
         let fd = open(url.path, O_EVTONLY)
         guard fd >= 0 else { return }
         t3MonitorFD = fd
@@ -2327,7 +2345,36 @@ final class ICloudSync: ObservableObject {
         source.setEventHandler { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self = self, self.isEnabled, self.isT3SyncEnabled, !self.isPerformingSync else { return }
-                self.schedulePush()
+                // Only trigger push if an actual tracked T3 configuration or credential file changed
+                var hasTrackedChange = false
+                for file in trackedFiles {
+                    let filePath = url.appendingPathComponent(file).path
+                    let currentMtime = (try? FileManager.default.attributesOfItem(atPath: filePath))?[.modificationDate] as? Date
+                    let recordedMtime = self.lastKnownT3Mtimes[file]
+                    if currentMtime != recordedMtime {
+                        hasTrackedChange = true
+                        if let currentMtime = currentMtime {
+                            self.lastKnownT3Mtimes[file] = currentMtime
+                        } else {
+                            self.lastKnownT3Mtimes.removeValue(forKey: file)
+                        }
+                    }
+                }
+                if let credsURL = self.localT3CredentialsURL {
+                    let currentMtime = (try? FileManager.default.attributesOfItem(atPath: credsURL.path))?[.modificationDate] as? Date
+                    let recordedMtime = self.lastKnownT3Mtimes["credentials"]
+                    if currentMtime != recordedMtime {
+                        hasTrackedChange = true
+                        if let currentMtime = currentMtime {
+                            self.lastKnownT3Mtimes["credentials"] = currentMtime
+                        } else {
+                            self.lastKnownT3Mtimes.removeValue(forKey: "credentials")
+                        }
+                    }
+                }
+                if hasTrackedChange {
+                    self.schedulePush()
+                }
             }
         }
 
