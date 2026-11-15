@@ -1964,19 +1964,7 @@ final class ICloudSync: ObservableObject {
                 }
             }
 
-            // 7b. Write T3 credentials if enabled
-            if isT3SyncEnabled && isT3CredentialsSyncEnabled,
-               let cloudCreds = cloudT3CredentialsURL {
-                if let data = exportT3Credentials(), !data.isEmpty {
-                    let cloudData = try? Data(contentsOf: cloudCreds)
-                    if cloudData != data {
-                        try? data.write(to: cloudCreds, options: .atomic)
-                        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: cloudCreds.path)
-                        didTransferAny = true
-                        changed.append("Updated T3 credentials")
-                    }
-                }
-            }
+            // 7b. Write T3 credentials if enabled (disabled: clerk-tokens.json is bound to local OS safeStorage key)
 
             // 7. Write manifest.json. Only rewrite it when its content actually
             // changed: an unconditional write on every balance tick wakes the

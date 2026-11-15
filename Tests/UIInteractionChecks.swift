@@ -788,18 +788,15 @@ import SwiftUI
 
         let pushedT3Success = await ICloudSync.shared.pushLocalState()
         precondition(pushedT3Success == true, "pushLocalState failed for T3")
-        guard let cloudT3Dir = ICloudSync.shared.cloudT3DirectoryURL,
-              let cloudT3CredsFile = ICloudSync.shared.cloudT3CredentialsURL else {
+        guard let cloudT3Dir = ICloudSync.shared.cloudT3DirectoryURL else {
             preconditionFailure("T3 iCloud URLs not resolved")
         }
         let cloudT3SettingsFile = cloudT3Dir.appendingPathComponent("settings.json")
         let cloudT3ManifestFile = cloudT3Dir.appendingPathComponent("model-manifest.json")
         precondition(FileManager.default.fileExists(atPath: cloudT3SettingsFile.path), "t3/settings.json missing in iCloud")
         precondition(FileManager.default.fileExists(atPath: cloudT3ManifestFile.path), "t3/model-manifest.json missing in iCloud")
-        precondition(FileManager.default.fileExists(atPath: cloudT3CredsFile.path), "t3-credentials.json missing in iCloud vault")
         precondition((try? String(contentsOf: cloudT3SettingsFile, encoding: .utf8)) == initialT3Settings)
         precondition((try? String(contentsOf: cloudT3ManifestFile, encoding: .utf8)) == initialT3Manifest)
-        precondition((try? String(contentsOf: cloudT3CredsFile, encoding: .utf8)) == initialT3CredsJSON)
 
         // Simulate Device B updating t3/model-manifest.json in iCloud
         let updatedT3Manifest = "{\"manifest\": {\"providers\": {\"antigravity\": {\"models\": [{\"slug\": \"gemini-3.8-flash\"}, {\"slug\": \"gemini-4-carbon\"}]}}}}"
