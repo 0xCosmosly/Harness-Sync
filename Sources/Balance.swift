@@ -24,6 +24,9 @@ struct Balance: Codable, Equatable {
     var dynamicAuthHeader: String?
     var tokensPerDay: Double? = nil
     var runwayDays: Int? = nil
+    /// Fractional runway in hours, when the provider's daily spend is known.
+    /// Lets the widget show hours/minutes once the runway drops under a day.
+    var runwayHours: Double? = nil
     /// The last server-derived top-up cycle total (newest deposit + unspent
     /// carryover). Survives the ledger window scrolling past the deposit;
     /// `baseline` alone cannot distinguish a stale previous cycle's total from
@@ -155,8 +158,9 @@ struct Reading: Decodable {
     var reference: Double? = nil
     var tokensPerDay: Double? = nil
     var runwayDays: Int? = nil
+    var runwayHours: Double? = nil
 
-    init(provider: String, remaining: Double, currency: String, account: String, url: String, expires: String?, reference: Double? = nil, tokensPerDay: Double? = nil, runwayDays: Int? = nil) {
+    init(provider: String, remaining: Double, currency: String, account: String, url: String, expires: String?, reference: Double? = nil, tokensPerDay: Double? = nil, runwayDays: Int? = nil, runwayHours: Double? = nil) {
         self.provider = provider
         self.remaining = remaining
         self.currency = currency
@@ -166,6 +170,7 @@ struct Reading: Decodable {
         self.reference = reference
         self.tokensPerDay = tokensPerDay
         self.runwayDays = runwayDays
+        self.runwayHours = runwayHours
     }
 }
 

@@ -1262,7 +1262,10 @@ final class HarnessSyncApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSW
         let oldRemaining = balances[i].remaining
         balances[i].remaining = r.remaining; balances[i].updated = Date(); balances[i].live = true; balances[i].expires = r.expires
         if let tpd = r.tokensPerDay { balances[i].tokensPerDay = tpd }
-        if let rd = r.runwayDays { balances[i].runwayDays = rd }
+        if let rd = r.runwayDays {
+            balances[i].runwayDays = rd
+            balances[i].runwayHours = r.runwayHours
+        }
         if r.provider == "refuseless" {
             if r.remaining > oldRemaining && oldRemaining > 0 {
                 let delta = r.remaining - oldRemaining

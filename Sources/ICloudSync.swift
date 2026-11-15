@@ -943,7 +943,7 @@ final class ICloudSync: ObservableObject {
         return pngData.base64EncodedString()
     }
 
-    func generateScriptablePayload(balances: [Balance]) -> Data? {
+    func generateScriptablePayload(balances: [Balance], activeBalances: [Balance] = [], existingSnapshot: Data? = nil) -> Data? {
         var payload: [String: Any] = [:]
         var serializedBalances: [[String: Any]] = []
         for b in balances {
@@ -957,6 +957,15 @@ final class ICloudSync: ObservableObject {
             ]
             if let r = b.runwayDays {
                 item["runwayDays"] = r
+                if let h = b.runwayHours { item["runwayHours"] = h }
+            } else if b.id == "overview",
+                      let earliest = activeBalances
+                        .filter({ $0.runwayDays != nil })
+                        .min(by: { ($0.runwayHours ?? Double($0.runwayDays!) * 24) < ($1.runwayHours ?? Double($1.runwayDays!) * 24) }) {
+                // The aggregate has no pacing of its own; show when the first
+                // provider is projected to run out.
+                item["runwayDays"] = earliest.runwayDays
+                if let h = earliest.runwayHours { item["runwayHours"] = h }
             }
             if let t = b.tokensPerDay {
                 item["tokensPerDay"] = t
@@ -970,6 +979,15 @@ final class ICloudSync: ObservableObject {
 
         if let codexbar = readCodexBarSnapshot() {
             payload["codexbar"] = codexbar
+        } else if let existingSnapshot,
+                  let old = try? JSONSerialization.jsonObject(with: existingSnapshot) as? [String: Any],
+                  let oldCodexBar = old["codexbar"] as? [String: Any],
+                  let updatedAt = oldCodexBar["updatedAt"] as? Double,
+                  // updatedAt is seconds since the Apple reference date. Keep the last
+                  // good CodexBar entry (possibly written by another Mac, or while
+                  // CodexBar was restarting) instead of making the widget row vanish.
+                  Date().timeIntervalSinceReferenceDate - updatedAt < 6 * 3600 {
+            payload["codexbar"] = oldCodexBar
         }
 
         return try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
@@ -1428,7 +1446,10 @@ final class ICloudSync: ObservableObject {
                         current[localIdx].expires = remote.expires
                         current[localIdx].live = remote.live || current[localIdx].live
                         if let t = remote.tokensPerDay { current[localIdx].tokensPerDay = t }
-                        if let r = remote.runwayDays { current[localIdx].runwayDays = r }
+                        if let r = remote.runwayDays {
+                            current[localIdx].runwayDays = r
+                            current[localIdx].runwayHours = remote.runwayHours
+                        }
                         didChangeLocally = true
                     }
                 } else if !removedSet.contains(remote.id) {
@@ -1743,7 +1764,8 @@ final class ICloudSync: ObservableObject {
                 }
                 if isScriptableSyncEnabled {
                     installScriptableTemplateIfNeeded()
-                    if let scriptableData = generateScriptablePayload(balances: app.menuBarVisibleBalances) {
+                    let previousSnapshot = scriptableSnapshotURL.flatMap { try? Data(contentsOf: $0) }
+                    if let scriptableData = generateScriptablePayload(balances: app.menuBarVisibleBalances, activeBalances: app.activeBalances, existingSnapshot: previousSnapshot) {
                         if let scriptableURL = scriptableSnapshotURL {
                             let existingScriptable = try? Data(contentsOf: scriptableURL)
                             if existingScriptable != scriptableData {

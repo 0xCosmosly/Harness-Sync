@@ -292,7 +292,7 @@ struct UnalignedProvider: BalanceProvider {
 
     /// Extracts 30-day token pacing and runway metrics from the Unaligned dashboard node payload.
     /// Returns tokens per day and remaining runway days, or nil if metrics cannot be calculated.
-    static func extractPacing(json: Any, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int)? {
+    static func extractPacing(json: Any, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? {
         guard remaining >= 0 else { return nil }
 
         func numeric(_ value: Any?) -> Double? {
@@ -394,14 +394,15 @@ struct UnalignedProvider: BalanceProvider {
         let spend = totalSpend ?? dailySpends.values.reduce(0, +)
         let dailySpend = spend > 0 ? (spend / Double(activeDays)) : 0
         let runwayDays = dailySpend > 0 ? max(0, Int(floor(remaining / dailySpend))) : nil
+        let runwayHours = dailySpend > 0 ? max(0, remaining / dailySpend * 24) : nil
 
         if let runway = runwayDays {
-            return (tokensPerDay: tokensPerDay, runwayDays: runway)
+            return (tokensPerDay: tokensPerDay, runwayDays: runway, runwayHours: runwayHours)
         }
         return nil
     }
 
-    static func extractPacing(from data: Data, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int)? {
+    static func extractPacing(from data: Data, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? {
         guard let json = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) else { return nil }
         return extractPacing(json: json, remaining: remaining)
     }
@@ -430,7 +431,7 @@ struct UnalignedProvider: BalanceProvider {
                 guard !parsed.account.isEmpty || account.isEmpty || account.hasSuffix(" Account") || account == parsed.account else {
                     throw ConnectorError.message("This Unaligned sign-in belongs to a different account. The previous balance was retained.")
                 }
-                var pacing: (tokensPerDay: Double, runwayDays: Int)? = nil
+                var pacing: (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? = nil
                 if let json = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) {
                     pacing = Self.extractPacing(json: json, remaining: parsed.remaining)
                 }
@@ -453,7 +454,8 @@ struct UnalignedProvider: BalanceProvider {
                     expires: nil,
                     reference: baseline,
                     tokensPerDay: pacing?.tokensPerDay,
-                    runwayDays: pacing?.runwayDays
+                    runwayDays: pacing?.runwayDays,
+                    runwayHours: pacing?.runwayHours
                 )
             } catch {
                 lastError = error

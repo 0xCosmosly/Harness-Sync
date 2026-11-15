@@ -779,7 +779,7 @@ struct RefuselessProvider: BalanceProvider {
 
     /// Extracts 30-day token pacing and runway metrics from the Refuseless console RSC payload.
     /// Returns tokens per day and remaining runway days, or nil if metrics cannot be calculated.
-    static func extractPacing(html: String, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int)? {
+    static func extractPacing(html: String, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? {
         guard let outputTokens = Self.integerValue(html, key: "periodOutputTokens"), outputTokens > 0 else {
             return nil
         }
@@ -813,9 +813,10 @@ struct RefuselessProvider: BalanceProvider {
 
         let tokensPerDay = activeDays > 0 ? (outputTokens / Double(activeDays)) : outputTokens
         let runwayDays = dailySpend > 0 ? max(0, Int(floor(remaining / dailySpend))) : nil
+        let runwayHours = dailySpend > 0 ? max(0, remaining / dailySpend * 24) : nil
 
         if let runway = runwayDays {
-            return (tokensPerDay: tokensPerDay, runwayDays: runway)
+            return (tokensPerDay: tokensPerDay, runwayDays: runway, runwayHours: runwayHours)
         }
         return nil
     }
@@ -832,7 +833,7 @@ struct RefuselessProvider: BalanceProvider {
         try? await http.persist()
 
         var latestParsed: (remaining: Double, baseline: Double, account: String)? = nil
-        var pacing: (tokensPerDay: Double, runwayDays: Int)? = nil
+        var pacing: (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? = nil
 
         var billingHtml = ""
         var consoleHtml = ""
@@ -891,7 +892,8 @@ struct RefuselessProvider: BalanceProvider {
             expires: nil,
             reference: verifiedRef,
             tokensPerDay: pacing?.tokensPerDay,
-            runwayDays: pacing?.runwayDays
+            runwayDays: pacing?.runwayDays,
+            runwayHours: pacing?.runwayHours
         )
     }
 }
@@ -1130,7 +1132,7 @@ struct LutheosProvider: BalanceProvider {
         return ""
     }
 
-    static func extractPacing(from data: Data) -> (tokensPerDay: Double, runwayDays: Int)? {
+    static func extractPacing(from data: Data) -> (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let nodes = json["nodes"] as? [[String: Any]] else { return nil }
 
@@ -1142,6 +1144,7 @@ struct LutheosProvider: BalanceProvider {
         }
 
         var runwayDays: Int? = nil
+        var runwayHours: Double? = nil
         var tokensPerDay: Double? = nil
 
         for node in nodes {
@@ -1151,7 +1154,11 @@ struct LutheosProvider: BalanceProvider {
             if let rRef = rootObj["runwayDays"] {
                 let rVal = deref(rRef, in: dataArr)
                 if let i = rVal as? Int, i >= 0 { runwayDays = i }
-                else if let d = rVal as? Double, d >= 0 { runwayDays = Int(d) }
+                else if let d = rVal as? Double, d >= 0 {
+                    runwayDays = Int(d)
+                    // Fractional days from the server give a sub-day reading.
+                    if d != d.rounded() { runwayHours = d * 24 }
+                }
             }
 
             if let bRef = rootObj["buckets"], let bArr = deref(bRef, in: dataArr) as? [Any] {
@@ -1182,14 +1189,14 @@ struct LutheosProvider: BalanceProvider {
         }
 
         if let t = tokensPerDay, let r = runwayDays {
-            return (tokensPerDay: t, runwayDays: r)
+            return (tokensPerDay: t, runwayDays: r, runwayHours: runwayHours)
         }
         return nil
     }
 
     func fetchBalance() async throws -> Reading {
         var latestParsed: (remaining: Double, baseline: Double, account: String)? = nil
-        var pacing: (tokensPerDay: Double, runwayDays: Int)? = nil
+        var pacing: (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? = nil
 
         // Try Strategy 1: Billing SvelteKit data endpoint (source of truth for credited total and balance)
         if let billingURL = URL(string: "https://lutheos.com/billing/__data.json") {
@@ -1258,7 +1265,8 @@ struct LutheosProvider: BalanceProvider {
             expires: nil,
             reference: parsed.baseline > 0 ? parsed.baseline : nil,
             tokensPerDay: pacing?.tokensPerDay,
-            runwayDays: pacing?.runwayDays
+            runwayDays: pacing?.runwayDays,
+            runwayHours: pacing?.runwayHours
         )
     }
 }

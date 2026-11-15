@@ -208,14 +208,14 @@ struct HeimdallmProvider: BalanceProvider {
     // MARK: - Pacing
 
     /// Extracts 30-day token pacing and runway metrics from Heimdallm analytics and credits payloads.
-    static func extractPacing(analyticsData: Data, creditsData: Data? = nil, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int)? {
+    static func extractPacing(analyticsData: Data, creditsData: Data? = nil, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? {
         guard let analyticsJSON = try? JSONSerialization.jsonObject(with: analyticsData, options: [.fragmentsAllowed]) as? [String: Any] else {
             return nil
         }
         return extractPacing(analyticsJSON: analyticsJSON, creditsData: creditsData, remaining: remaining)
     }
 
-    static func extractPacing(analyticsJSON: [String: Any], creditsData: Data? = nil, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int)? {
+    static func extractPacing(analyticsJSON: [String: Any], creditsData: Data? = nil, remaining: Double) -> (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? {
         guard remaining >= 0 else { return nil }
 
         let summary = analyticsJSON["summary"] as? [String: Any]
@@ -253,9 +253,10 @@ struct HeimdallmProvider: BalanceProvider {
 
         let dailySpend = totalSpend > 0 ? (totalSpend / Double(activeDays)) : 0
         let runwayDays = dailySpend > 0 ? max(0, Int(floor(remaining / dailySpend))) : nil
+        let runwayHours = dailySpend > 0 ? max(0, remaining / dailySpend * 24) : nil
 
         if let runway = runwayDays {
-            return (tokensPerDay: tokensPerDay, runwayDays: runway)
+            return (tokensPerDay: tokensPerDay, runwayDays: runway, runwayHours: runwayHours)
         }
         return nil
     }
@@ -293,7 +294,7 @@ struct HeimdallmProvider: BalanceProvider {
             accountData = accData
         }
 
-        var pacing: (tokensPerDay: Double, runwayDays: Int)? = nil
+        var pacing: (tokensPerDay: Double, runwayDays: Int, runwayHours: Double?)? = nil
         if let (remaining, _, _, _) = try? Self.parseCredits(creditsData),
            let analyticsURL = URL(string: "https://\(host)/api/frontend/v1/generations/analytics"),
            let (analyticsData, analyticsResp) = try? await http.request(url: analyticsURL),
@@ -301,7 +302,7 @@ struct HeimdallmProvider: BalanceProvider {
             pacing = Self.extractPacing(analyticsData: analyticsData, creditsData: creditsData, remaining: remaining)
         }
 
-        let reading = try Self.parse(
+        var reading = try Self.parse(
             creditsData: creditsData,
             accountData: accountData,
             url: creditsURL.absoluteString,
@@ -309,6 +310,7 @@ struct HeimdallmProvider: BalanceProvider {
             tokensPerDay: pacing?.tokensPerDay,
             runwayDays: pacing?.runwayDays
         )
+        reading.runwayHours = pacing?.runwayHours
         try await http.persist()
         return reading
     }

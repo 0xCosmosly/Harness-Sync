@@ -13,7 +13,32 @@ enum CodexBarPacing {
     /// Dollar summaries are unreliable across CodexBar providers (not all
     /// models publish pricing), so the widget displays this pacing line
     /// instead of dollar reset descriptions whenever it is available.
-    static func pacing(usage: [String: Any], displayWindow: [String: Any]?) -> [String: Any]? {
+    static func pacing(usage: [String: Any], displayWindow: [String: Any]?, now: Date = Date()) -> [String: Any]? {
+        if let ledger = ledgerPacing(usage: usage, displayWindow: displayWindow) { return ledger }
+        return windowPacing(displayWindow: displayWindow, now: now)
+    }
+
+    /// Quota-window providers (Claude, Codex, Antigravity, ...) publish no token
+    /// ledger. Project the runway from the window's burn rate instead: percent
+    /// used over the time elapsed in the window, extrapolated to 100%. Returns
+    /// whole `runwayDays` plus fractional `runwayHours`.
+    static func windowPacing(displayWindow: [String: Any]?, now: Date = Date()) -> [String: Any]? {
+        guard let win = displayWindow,
+              let used = win["usedPercent"] as? Double,
+              let resetsAt = win["resetsAt"] as? Double,
+              let minutes = win["windowMinutes"] as? Double, minutes > 0 else { return nil }
+        let windowSeconds = minutes * 60
+        let remainingSeconds = resetsAt - now.timeIntervalSinceReferenceDate
+        let elapsed = windowSeconds - remainingSeconds
+        guard used > 0, used < 100, elapsed > 60, remainingSeconds > 0 else { return nil }
+        let runwaySeconds = (100 - used) / (used / elapsed)
+        return [
+            "runwayDays": Int(floor(runwaySeconds / 86400)),
+            "runwayHours": runwaySeconds / 3600
+        ]
+    }
+
+    private static func ledgerPacing(usage: [String: Any], displayWindow: [String: Any]?) -> [String: Any]? {
         guard let mistral = usage["mistralUsage"] as? [String: Any],
               let daily = mistral["daily"] as? [[String: Any]], !daily.isEmpty else {
             return nil
@@ -35,18 +60,21 @@ enum CodexBarPacing {
         // Spend-based runway from the displayed window's dollar summary
         // ("$96.34 / $150.00 · $53.66 left"). Parsed, never displayed as money.
         var runwayDays: Int? = nil
+        var runwayHours: Double? = nil
         if let reset = displayWindow?["resetDescription"] as? String,
            let remaining = dollarAmount(after: "· ", in: reset, suffix: " left") {
             let dailySpend = totalCost / Double(activeDays)
             if dailySpend > 0, remaining > 0 {
                 runwayDays = max(0, Int(floor(remaining / dailySpend)))
+                runwayHours = remaining / dailySpend * 24
             }
         }
         guard let runway = runwayDays else { return nil }
 
         return [
             "tokensPerDay": tokensPerDay,
-            "runwayDays": runway
+            "runwayDays": runway,
+            "runwayHours": runwayHours ?? Double(runway) * 24
         ]
     }
 
