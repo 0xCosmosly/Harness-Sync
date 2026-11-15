@@ -168,7 +168,7 @@ final class ICloudSync: ObservableObject {
     @Published var isOmpSyncEnabled: Bool = false
     @Published var isOmpCredentialsSyncEnabled: Bool = true
     @Published var isT3SyncEnabled: Bool = false
-    @Published var isT3CredentialsSyncEnabled: Bool = true
+    @Published var isT3CredentialsSyncEnabled: Bool = false
     @Published var isScriptableSyncEnabled: Bool = true
     @Published private(set) var lastSyncDate: Date? = nil
     @Published private(set) var statusMessage: String = "Disabled"
@@ -442,7 +442,7 @@ final class ICloudSync: ObservableObject {
         }
         self.isT3SyncEnabled = UserDefaults.standard.bool(forKey: Self.t3EnabledKey)
         if UserDefaults.standard.object(forKey: Self.t3CredentialsEnabledKey) == nil {
-            self.isT3CredentialsSyncEnabled = true
+            self.isT3CredentialsSyncEnabled = false
         } else {
             self.isT3CredentialsSyncEnabled = UserDefaults.standard.bool(forKey: Self.t3CredentialsEnabledKey)
         }
@@ -1608,16 +1608,8 @@ final class ICloudSync: ObservableObject {
             }
         }
 
-        // 7b. Pull T3 credentials
-        if isT3SyncEnabled && isT3CredentialsSyncEnabled,
-           let cloudCreds = cloudT3CredentialsURL,
-           FileManager.default.fileExists(atPath: cloudCreds.path) {
-            if let data = try? Data(contentsOf: cloudCreds), !data.isEmpty {
-                if importT3Credentials(data: data) {
-                    didChangeLocally = true
-                }
-            }
-        }
+        // 7b. Pull T3 credentials (disabled: clerk-tokens.json is encrypted per-machine by Electron safeStorage)
+        // Syncing ciphertext between machines causes invalid decryption and disconnects the session.
 
         if didChangeLocally {
             let now = Date()

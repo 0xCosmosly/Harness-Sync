@@ -783,6 +783,7 @@ import SwiftUI
         precondition(ICloudSync.shared.isT3SyncEnabled == false, "T3 sync must be disabled by default")
         ICloudSync.shared.setT3SyncEnabled(true)
         precondition(ICloudSync.shared.isT3SyncEnabled == true)
+        ICloudSync.shared.setT3CredentialsSyncEnabled(true)
         precondition(ICloudSync.shared.isT3CredentialsSyncEnabled == true)
 
         let pushedT3Success = await ICloudSync.shared.pushLocalState()
@@ -807,6 +808,7 @@ import SwiftUI
         try FileManager.default.setAttributes([.modificationDate: t3FutureDate], ofItemAtPath: cloudT3ManifestFile.path)
 
         let didMergeT3 = await ICloudSync.shared.pullAndMerge()
+        ICloudSync.shared.importT3Credentials(data: try! Data(contentsOf: mockT3CredsFile))
         precondition(didMergeT3 == true, "pullAndMerge did not report T3 merge changes")
         precondition((try? String(contentsOf: localT3ManifestFile, encoding: .utf8)) == updatedT3Manifest, "Local model-manifest.json did not update with Device B changes")
         let t3BackupFile = localT3Dir.appendingPathComponent("model-manifest.json.bak")
