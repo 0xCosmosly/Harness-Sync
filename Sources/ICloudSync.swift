@@ -138,6 +138,75 @@ public enum CloudSyncState: Equatable, Sendable {
 
 @MainActor
 final class ICloudSync: ObservableObject {
+    public enum ICloudAccessKind: String, Sendable {
+        case fullDisk = "Full Disk Access"
+        case folder = "Folder Access"
+        case system = "System iCloud"
+        case blocked = "Action Required"
+        case unavailable = "iCloud Drive Disabled"
+    }
+
+    static let iCloudBookmarkKey = "ICloudFolderBookmark"
+    static let iCloudPathKey = "ICloudFolderPath"
+
+    func rememberICloudFolder(_ url: URL) throws {
+        let bookmark = try ProfileBookmark.create(url)
+        UserDefaults.standard.set(bookmark, forKey: Self.iCloudBookmarkKey)
+        UserDefaults.standard.set(url.path, forKey: Self.iCloudPathKey)
+        _ = checkAvailability()
+        updateStatusMessage()
+    }
+
+    func resolvedICloudFolder() -> (url: URL?, accessing: Bool) {
+        if let bookmark = UserDefaults.standard.data(forKey: Self.iCloudBookmarkKey) {
+            var stale = false
+            if let url = try? ProfileBookmark.resolve(bookmark, stale: &stale) {
+                let accessing = url.startAccessingSecurityScopedResource()
+                return (url, accessing)
+            }
+        }
+        if let path = UserDefaults.standard.string(forKey: Self.iCloudPathKey) {
+            let url = URL(fileURLWithPath: path, isDirectory: true)
+            if FileManager.default.fileExists(atPath: url.path) {
+                return (url, false)
+            }
+        }
+        return (nil, false)
+    }
+
+    func accessKind() -> ICloudAccessKind {
+        if (ProcessInfo.processInfo.environment["HARNESSSYNC_ICLOUD_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_ICLOUD_DIR"]) != nil {
+            return .system
+        }
+        if BraveSessionImporter.hasFullDiskAccess() {
+            return .fullDisk
+        }
+        let (customFolder, accessing) = resolvedICloudFolder()
+        if accessing { customFolder?.stopAccessingSecurityScopedResource() }
+        if customFolder != nil {
+            return .folder
+        }
+        if !checkAvailability() {
+            return .unavailable
+        }
+        guard let base = baseDirectoryURL else {
+            return .unavailable
+        }
+        let parent = base.deletingLastPathComponent()
+        if !FileManager.default.fileExists(atPath: parent.path) {
+            return .unavailable
+        }
+        do {
+            try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+            let probe = base.appendingPathComponent(".access_probe")
+            try Data("probe".utf8).write(to: probe)
+            try? FileManager.default.removeItem(at: probe)
+            return .system
+        } catch {
+            return .blocked
+        }
+    }
+
     static let shared = ICloudSync()
 
     static let enabledKey = "ICloudSyncEnabled"
@@ -268,12 +337,28 @@ final class ICloudSync: ObservableObject {
         if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_ICLOUD_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_ICLOUD_DIR"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
-        if let ubiquity = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
-            return ubiquity.appendingPathComponent("Documents/API Bar", isDirectory: true)
+        let (customFolder, _) = resolvedICloudFolder()
+        if let customFolder {
+            let last = customFolder.lastPathComponent
+            if last == "Harness Sync" || last == "API Bar" {
+                return customFolder
+            }
+            return customFolder.appendingPathComponent("Harness Sync", isDirectory: true)
         }
-        let cloudDocs = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs/API Bar", isDirectory: true)
-        return cloudDocs
+        if let ubiquity = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
+            let modern = ubiquity.appendingPathComponent("Documents/Harness Sync", isDirectory: true)
+            let legacy = ubiquity.appendingPathComponent("Documents/API Bar", isDirectory: true)
+            if FileManager.default.fileExists(atPath: modern.path) { return modern }
+            if FileManager.default.fileExists(atPath: legacy.path) { return legacy }
+            return modern
+        }
+        let cloudDocsRoot = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
+        let modern = cloudDocsRoot.appendingPathComponent("Harness Sync", isDirectory: true)
+        let legacy = cloudDocsRoot.appendingPathComponent("API Bar", isDirectory: true)
+        if FileManager.default.fileExists(atPath: modern.path) { return modern }
+        if FileManager.default.fileExists(atPath: legacy.path) { return legacy }
+        return modern
     }
 
     var balancesURL: URL? {
@@ -1072,6 +1157,12 @@ final class ICloudSync: ObservableObject {
 
     func checkAvailability() -> Bool {
         if (ProcessInfo.processInfo.environment["HARNESSSYNC_ICLOUD_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_ICLOUD_DIR"]) != nil {
+            isAvailable = true
+            return true
+        }
+        let (customFolder, accessing) = resolvedICloudFolder()
+        if accessing { customFolder?.stopAccessingSecurityScopedResource() }
+        if customFolder != nil {
             isAvailable = true
             return true
         }

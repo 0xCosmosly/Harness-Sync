@@ -1368,6 +1368,8 @@ struct OnboardingView: View {
                     providersStep
                 } else if step == 2 {
                     braveStep
+                } else if step == 3 {
+                    icloudStep
                 } else {
                     preferencesStep
                 }
@@ -1386,7 +1388,7 @@ struct OnboardingView: View {
                     .buttonStyle(PaperWhiteButtonStyle())
                 }
                 Spacer()
-                if step < 3 {
+                if step < 4 {
                     Button("Continue") {
                         withAnimation(.easeInOut(duration: 0.2)) { step += 1 }
                     }
@@ -1719,6 +1721,138 @@ struct OnboardingView: View {
         }
     }
 
+
+    private var icloudStep: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Sync with iCloud Drive")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                Text("Keep your AI agent configurations, model setups, credentials, and token baselines synchronized privately across your Macs.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                icloudPermissionBanner
+
+                Divider().opacity(0.6)
+
+                Toggle("Enable iCloud Sync", isOn: Binding(
+                    get: { app.iCloudSyncEnabled },
+                    set: { app.setICloudSyncEnabled($0) }
+                ))
+                .font(.headline)
+
+                if app.iCloudSyncEnabled {
+                    Text("Select which AI agent harnesses to synchronize automatically:")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+
+                    IntegrationSyncSection(app: app, compact: true)
+                        .padding(.top, 2)
+                }
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color(NSColor.controlBackgroundColor)))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+            .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    @ViewBuilder
+    private var icloudPermissionBanner: some View {
+        let kind = app.iCloudAccessKind
+        if kind == .fullDisk || kind == .folder || kind == .system {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.green)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("iCloud Drive Access Active")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    Text(kind == .fullDisk ? "Full Disk Access granted" : (kind == .folder ? "Folder access granted" : "System iCloud Drive ready"))
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+                }
+                Spacer()
+                Button("Folder Access…") {
+                    app.chooseICloudFolder()
+                }
+                .buttonStyle(PaperWhiteButtonStyle())
+                .controlSize(.small)
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.green.opacity(0.08)))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green.opacity(0.2), lineWidth: 1))
+        } else if kind == .blocked {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Color.orange)
+                    Text("iCloud Drive access requires macOS permission.")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
+                Text("Grant Folder Access to your iCloud Drive folder for instant access, or grant Full Disk Access in macOS System Settings.")
+                    .font(.caption)
+                    .foregroundStyle(Color.secondary)
+                HStack(spacing: 8) {
+                    Button("Grant Folder Access") {
+                        app.chooseICloudFolder()
+                    }
+                    .buttonStyle(PaperProminentButtonStyle())
+                    .controlSize(.small)
+
+                    Button("Open iCloud Settings") {
+                        app.openICloudSettings()
+                    }
+                    .buttonStyle(PaperWhiteButtonStyle())
+                    .controlSize(.small)
+
+                    Button("Full Disk Access") {
+                        app.openFullDiskAccessSettings()
+                    }
+                    .buttonStyle(PaperWhiteButtonStyle())
+                    .controlSize(.small)
+                }
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.10)))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.orange.opacity(0.25), lineWidth: 1))
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "icloud.slash")
+                        .foregroundStyle(Color.orange)
+                    Text("iCloud Drive is not enabled in macOS.")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
+                Text("Turn on iCloud Drive in macOS System Settings, or choose a local folder to use for sync.")
+                    .font(.caption)
+                    .foregroundStyle(Color.secondary)
+                HStack(spacing: 8) {
+                    Button("Open iCloud Settings") {
+                        app.openICloudSettings()
+                    }
+                    .buttonStyle(PaperProminentButtonStyle())
+                    .controlSize(.small)
+
+                    Button("Choose Folder…") {
+                        app.chooseICloudFolder()
+                    }
+                    .buttonStyle(PaperWhiteButtonStyle())
+                    .controlSize(.small)
+                }
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.10)))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.orange.opacity(0.25), lineWidth: 1))
+        }
+    }
+
     private var preferencesStep: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Configure Preferences")
@@ -1748,15 +1882,9 @@ struct OnboardingView: View {
                         set: { app.setICloudSyncEnabled($0) }
                     ))
                     .font(.subheadline)
-                    Text("Keep your providers, custom endpoints, and baselines up to date across all your Macs.")
+                    Text("Configured in the previous step: keeps providers, agent harnesses, and baselines up to date across all your Macs.")
                         .font(.caption)
                         .foregroundStyle(Color.secondary)
-
-                    if app.iCloudSyncEnabled {
-                        IntegrationSyncSection(app: app, compact: true)
-                            .padding(.top, 4)
-                            .padding(.leading, 8)
-                    }
                 }
 
                 Divider()
@@ -2025,6 +2153,8 @@ struct SettingsPane: View {
                         .fontWeight(.bold)
                         .foregroundStyle(Color.primary)
                     Spacer()
+                    // Permission badge
+                    icloudPermissionBadge
                     if !icloud.isAvailable {
                         HStack(spacing: 4) {
                             Circle().fill(Color.orange).frame(width: 6, height: 6)
@@ -2072,6 +2202,8 @@ struct SettingsPane: View {
                         .font(.subheadline)
                         .foregroundStyle(Color.secondary)
                 }
+
+                icloudPermissionActions
 
                 if icloud.isEnabled {
                     Divider().opacity(0.6)
@@ -2453,6 +2585,109 @@ struct SettingsPane: View {
                 .padding(.top, 4)
             }
         }
+    }
+
+    @ViewBuilder
+    private var icloudPermissionBadge: some View {
+        let kind = app.iCloudAccessKind
+        if kind == .fullDisk {
+            HStack(spacing: 5) {
+                Circle().fill(Color.green).frame(width: 6, height: 6)
+                Text("Full Disk Access")
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(Color.green)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(Color.green.opacity(0.12)))
+        } else if kind == .folder {
+            HStack(spacing: 5) {
+                Circle().fill(Color.blue).frame(width: 6, height: 6)
+                Text("Folder Access")
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(Color.blue)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(Color.blue.opacity(0.12)))
+        } else if kind == .system {
+            HStack(spacing: 5) {
+                Circle().fill(Color.green).frame(width: 6, height: 6)
+                Text("System iCloud")
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(Color.green)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(Color.green.opacity(0.12)))
+        } else if kind == .blocked {
+            HStack(spacing: 5) {
+                Circle().fill(Color.orange).frame(width: 6, height: 6)
+                Text("Action Required")
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(Color.orange)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(Color.orange.opacity(0.12)))
+        } else {
+            HStack(spacing: 5) {
+                Circle().fill(Color.secondary).frame(width: 6, height: 6)
+                Text("Disabled")
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(Color.secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(Color.secondary.opacity(0.12)))
+        }
+    }
+
+    @ViewBuilder
+    private var icloudPermissionActions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if app.isICloudAccessBlocked {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Color.orange)
+                    Text("iCloud Drive access requires macOS permission.")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
+                Text("Grant Folder Access to your iCloud Drive folder for instant, permanent access, or grant Full Disk Access in macOS System Settings.")
+                    .font(.caption)
+                    .foregroundStyle(Color.secondary)
+            }
+
+            HStack(spacing: 8) {
+                Button(app.iCloudAccessKind == .fullDisk ? "Full Disk Access ✓" : "Grant Full Disk Access") {
+                    app.openFullDiskAccessSettings()
+                }
+                .buttonStyle(PaperWhiteButtonStyle())
+                .disabled(app.iCloudAccessKind == .fullDisk)
+
+                Button(app.iCloudAccessKind == .folder ? "Folder Access ✓" : "Folder Access Only") {
+                    app.chooseICloudFolder()
+                }
+                .buttonStyle(PaperWhiteButtonStyle())
+                .disabled(app.iCloudAccessKind == .folder)
+
+                Button("Open iCloud Settings") {
+                    app.openICloudSettings()
+                }
+                .buttonStyle(PaperWhiteButtonStyle())
+
+                Spacer()
+
+                Button("Check Access") {
+                    app.refreshICloudAccess()
+                }
+                .buttonStyle(PaperWhiteButtonStyle())
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 8).fill(app.isICloudAccessBlocked ? Color.orange.opacity(0.10) : Color.primary.opacity(0.03)))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(app.isICloudAccessBlocked ? Color.orange.opacity(0.25) : Color.primary.opacity(0.06), lineWidth: 1))
     }
 
     @ViewBuilder

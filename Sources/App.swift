@@ -513,6 +513,8 @@ final class HarnessSyncApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSW
     @Published var isBraveInstalled: Bool = BraveSessionImporter.isBraveInstalled()
     @Published var braveAccessKind: BraveSessionImporter.BraveAccessKind = BraveSessionImporter.accessKind()
     @Published var isBraveAccessBlocked: Bool = (BraveSessionImporter.accessKind() == .blocked)
+    @Published var iCloudAccessKind: ICloudSync.ICloudAccessKind = ICloudSync.shared.accessKind()
+    @Published var isICloudAccessBlocked: Bool = (ICloudSync.shared.accessKind() == .blocked)
     @Published var availableBraveProfiles: [BraveProfile] = BraveSessionImporter.availableProfiles()
     @Published var selectedBraveProfileID: String = {
         let profiles = BraveSessionImporter.availableProfiles()
@@ -602,6 +604,7 @@ final class HarnessSyncApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSW
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshBraveProfiles()
+                self?.refreshICloudAccess()
             }
         }
         NSApp.applicationIconImage = BrandMark.appIconImage(size: 256)
@@ -741,7 +744,14 @@ final class HarnessSyncApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSW
             updateTitles()
             return
         }
+        reconcileMenuBarManagerSections(identities: identities)
         for identity in identities where !present.contains(identity) {
+            let posKey = "NSStatusItem Preferred Position \(identity)"
+            if UserDefaults.standard.object(forKey: posKey) == nil {
+                UserDefaults.standard.set(250, forKey: posKey)
+            }
+            UserDefaults.standard.set(true, forKey: "NSStatusItem Visible \(identity)")
+            UserDefaults.standard.set(true, forKey: "NSStatusItem VisibleCC \(identity)")
             let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
             item.autosaveName = identity
             item.button?.setAccessibilityIdentifier(identity)
@@ -951,6 +961,84 @@ final class HarnessSyncApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSW
                 braveProfileStatus = "Access granted to \(browserName). Connect each provider below."
             } catch {
                 alert("Could not select \(browserName) folder", error.localizedDescription)
+            }
+        }
+    }
+
+
+    func refreshICloudAccess() {
+        iCloudAccessKind = ICloudSync.shared.accessKind()
+        isICloudAccessBlocked = (iCloudAccessKind == .blocked)
+        _ = ICloudSync.shared.checkAvailability()
+        ICloudSync.shared.updateStatusMessage()
+    }
+
+    func chooseICloudFolder() {
+        let panel = NSOpenPanel()
+        panel.message = "Select your iCloud Drive folder (or local Documents) for Harness Sync"
+        panel.prompt = "Grant Access"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.showsHiddenFiles = true
+
+        let cloudDocsRoot = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
+        if FileManager.default.fileExists(atPath: cloudDocsRoot.path) {
+            panel.directoryURL = cloudDocsRoot
+        } else {
+            panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+        if panel.runModal() == .OK, let url = panel.url {
+            do {
+                try ICloudSync.shared.rememberICloudFolder(url)
+                refreshICloudAccess()
+            } catch {
+                alert("Could not grant iCloud Drive folder access", error.localizedDescription)
+            }
+        }
+    }
+
+    func openICloudSettings() {
+        let urls = [
+            "x-apple.systempreferences:com.apple.AppleIDSettings-Settings.extension",
+            "x-apple.systempreferences:com.apple.systempreferences.AppleIDSettings",
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders",
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
+        ]
+        for u in urls {
+            if let url = URL(string: u), NSWorkspace.shared.open(url) {
+                break
+            }
+        }
+    }
+
+    func reconcileMenuBarManagerSections(identities: [String]) {
+        for suite in ["com.stonerl.Thaw", "com.jordanbaird.Ice"] {
+            guard let domainDict = UserDefaults.standard.persistentDomain(forName: suite),
+                  let order = domainDict["MenuBarItemManager.savedSectionOrder"] as? [String: Any],
+                  let hidden = order["hidden"] as? [String] else { continue }
+
+            let bundleID = Bundle.main.bundleIdentifier ?? "app.harnesssync.HarnessSync"
+            let targets = identities.map { "\(bundleID):\($0)" } + identities.map { "app.apibar.APIBar:\($0)" }
+            let foundInHidden = hidden.filter { id in targets.contains(id) }
+            if !foundInHidden.isEmpty {
+                let updatedHidden = hidden.filter { !targets.contains($0) }
+                var updatedVisible = (order["visible"] as? [String]) ?? []
+                for target in targets where target.hasPrefix(bundleID) {
+                    if !updatedVisible.contains(target) {
+                        updatedVisible.append(target)
+                    }
+                }
+                var newOrder = order
+                newOrder["hidden"] = updatedHidden
+                newOrder["visible"] = updatedVisible
+                var mutableDomain = domainDict
+                mutableDomain["MenuBarItemManager.savedSectionOrder"] = newOrder
+                UserDefaults.standard.setPersistentDomain(mutableDomain, forName: suite)
             }
         }
     }
