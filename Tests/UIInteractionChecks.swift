@@ -14,6 +14,7 @@ import SwiftUI
             "APIBAR_OPENCODE_FILE",
             "APIBAR_PI_DIR",
             "APIBAR_OMP_DIR",
+            "APIBAR_SCRIPTABLE_DIR",
         ]
         let tempRoots = ["/tmp", "/private/tmp", "/var/folders", "/private/var/folders"]
         for key in keys {

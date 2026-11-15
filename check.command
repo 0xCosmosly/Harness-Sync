@@ -22,6 +22,9 @@ export HARNESSSYNC_OPENCODE_FILE="$TEST_STATE/opencode.json"
 export HARNESSSYNC_PI_DIR="$TEST_STATE/pi_agent"
 export HARNESSSYNC_OMP_DIR="$TEST_STATE/omp_agent"
 export HARNESSSYNC_T3_DIR="$TEST_STATE/t3_userdata"
+# The Scriptable folder is iCloud-synced to the phone widget; test snapshots
+# written there blanked rows on the real widget.
+export HARNESSSYNC_SCRIPTABLE_DIR="$TEST_STATE/scriptable"
 export APIBAR_VAULT_DIR="$HARNESSSYNC_VAULT_DIR"
 export APIBAR_DATA_DIR="$HARNESSSYNC_DATA_DIR"
 export APIBAR_ICLOUD_DIR="$HARNESSSYNC_ICLOUD_DIR"
@@ -29,7 +32,8 @@ export APIBAR_OPENCODE_FILE="$HARNESSSYNC_OPENCODE_FILE"
 export APIBAR_PI_DIR="$HARNESSSYNC_PI_DIR"
 export APIBAR_OMP_DIR="$HARNESSSYNC_OMP_DIR"
 export APIBAR_T3_DIR="$HARNESSSYNC_T3_DIR"
-mkdir -p "$HARNESSSYNC_VAULT_DIR" "$HARNESSSYNC_DATA_DIR" "$HARNESSSYNC_ICLOUD_DIR" "$HARNESSSYNC_PI_DIR" "$HARNESSSYNC_OMP_DIR" "$HARNESSSYNC_T3_DIR"
+export APIBAR_SCRIPTABLE_DIR="$HARNESSSYNC_SCRIPTABLE_DIR"
+mkdir -p "$HARNESSSYNC_VAULT_DIR" "$HARNESSSYNC_DATA_DIR" "$HARNESSSYNC_ICLOUD_DIR" "$HARNESSSYNC_PI_DIR" "$HARNESSSYNC_OMP_DIR" "$HARNESSSYNC_T3_DIR" "$HARNESSSYNC_SCRIPTABLE_DIR"
 swiftc -sdk "$SDK" -target "arm64-apple-macosx13.0" -parse-as-library -module-cache-path "$PWD/.cache/modules" Sources/BrandMark.swift Sources/Balance.swift Sources/Provider.swift Sources/Credentials.swift Sources/GoogleWebClientKeys.swift Sources/SessionHTTP.swift Sources/UnalignedProvider.swift Sources/YetaProvider.swift Sources/HeimdallmProvider.swift Sources/InferHubProvider.swift Sources/GoogleProvider.swift Sources/CrowbotProvider.swift Sources/AppUpdater.swift Sources/Changelog.swift Sources/CodexBarPacing.swift Sources/SyncChangeLog.swift Sources/AFMSummarizer.swift Tests/Checks.swift -o .cache/checks/HarnessSyncChecks
 .cache/checks/HarnessSyncChecks
 plutil -lint Resources/Info.plist
