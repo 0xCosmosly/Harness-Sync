@@ -975,11 +975,25 @@ final class ICloudSync: ObservableObject {
             }
             serializedBalances.append(item)
         }
-        payload["balances"] = serializedBalances
-
         let now = Date().timeIntervalSinceReferenceDate
-        let oldCodexBar = existingSnapshot
-            .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }?["codexbar"] as? [String: Any]
+        let oldPayload = existingSnapshot
+            .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+        let oldCodexBar = oldPayload?["codexbar"] as? [String: Any]
+
+        // An empty list (balances not loaded yet, a sync merge in flight, or
+        // another Mac mid-update) would blank the widget's Harness Sync row.
+        // Keep the previous non-empty list for up to 6 hours instead.
+        if serializedBalances.isEmpty,
+           let oldBalances = oldPayload?["balances"] as? [[String: Any]], !oldBalances.isEmpty,
+           let oldAt = oldPayload?["balancesUpdatedAt"] as? Double, now - oldAt < 6 * 3600 {
+            payload["balances"] = oldBalances
+            payload["balancesUpdatedAt"] = oldAt
+        } else {
+            payload["balances"] = serializedBalances
+            if !serializedBalances.isEmpty {
+                payload["balancesUpdatedAt"] = (now / 60).rounded(.down) * 60
+            }
+        }
 
         if var codexbar = readCodexBarSnapshot() {
             // Several Macs can run CodexBar with different menu bar providers and
