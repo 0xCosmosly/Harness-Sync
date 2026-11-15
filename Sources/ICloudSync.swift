@@ -977,17 +977,36 @@ final class ICloudSync: ObservableObject {
         }
         payload["balances"] = serializedBalances
 
-        if let codexbar = readCodexBarSnapshot() {
-            payload["codexbar"] = codexbar
-        } else if let existingSnapshot,
-                  let old = try? JSONSerialization.jsonObject(with: existingSnapshot) as? [String: Any],
-                  let oldCodexBar = old["codexbar"] as? [String: Any],
-                  let updatedAt = oldCodexBar["updatedAt"] as? Double,
+        let now = Date().timeIntervalSinceReferenceDate
+        let oldCodexBar = existingSnapshot
+            .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }?["codexbar"] as? [String: Any]
+
+        if var codexbar = readCodexBarSnapshot() {
+            // Several Macs can run CodexBar with different menu bar providers and
+            // all write this one iCloud-synced snapshot. Mirror the Mac the user
+            // is actually using: tag each entry with its device and the time of
+            // that Mac's last keyboard/mouse input, and yield to another Mac's
+            // recent entry when that Mac was used more recently than this one.
+            let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+            let userActiveAt = ((now - idle) / 60).rounded(.down) * 60
+            codexbar["sourceDevice"] = deviceId
+            codexbar["userActiveAt"] = userActiveAt
+            codexbar["writtenAt"] = (now / 60).rounded(.down) * 60
+            if let old = oldCodexBar,
+               let oldDevice = old["sourceDevice"] as? String, oldDevice != deviceId,
+               let oldActiveAt = old["userActiveAt"] as? Double, oldActiveAt > userActiveAt,
+               let oldWrittenAt = old["writtenAt"] as? Double, now - oldWrittenAt < 15 * 60 {
+                payload["codexbar"] = old
+            } else {
+                payload["codexbar"] = codexbar
+            }
+        } else if let old = oldCodexBar,
+                  let updatedAt = old["updatedAt"] as? Double,
                   // updatedAt is seconds since the Apple reference date. Keep the last
                   // good CodexBar entry (possibly written by another Mac, or while
                   // CodexBar was restarting) instead of making the widget row vanish.
-                  Date().timeIntervalSinceReferenceDate - updatedAt < 6 * 3600 {
-            payload["codexbar"] = oldCodexBar
+                  now - updatedAt < 6 * 3600 {
+            payload["codexbar"] = old
         }
 
         return try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
