@@ -126,7 +126,7 @@ public final class AppUpdater: ObservableObject {
         // Read through getenv so a test can change it at runtime; ProcessInfo
         // snapshots the environment at launch. A bare path is treated as a local
         // fixture file.
-        guard let raw = getenv("APIBAR_UPDATER_ENDPOINT") else { return nil }
+        guard let raw = getenv("HARNESSSYNC_UPDATER_ENDPOINT") ?? getenv("APIBAR_UPDATER_ENDPOINT") else { return nil }
         let value = String(cString: raw).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return nil }
         if value.contains("://"), let url = URL(string: value) { return url }
@@ -204,7 +204,7 @@ public final class AppUpdater: ObservableObject {
             title: title,
             notes: notes,
             releaseURL: releaseHtmlURL,
-            downloadURL: zipURL ?? URL(string: "https://github.com/\(repoOwner)/\(repoName)/releases/download/\(tagName)/APIBar-app.zip"),
+            downloadURL: zipURL ?? URL(string: "https://github.com/\(repoOwner)/\(repoName)/releases/download/\(tagName)/HarnessSync-app.zip"),
             assetUpdatedAt: assetUpdatedAt
         )
     }
@@ -224,7 +224,7 @@ public final class AppUpdater: ObservableObject {
         if let apiURL = override ?? URL(string: Self.latestReleaseEndpoint) {
             var req = URLRequest(url: apiURL)
             req.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-            req.setValue("APIBar-Updater/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+            req.setValue("HarnessSync-Updater/\(currentVersion)", forHTTPHeaderField: "User-Agent")
             req.timeoutInterval = 8
 
             if let (data, response) = try? await URLSession.shared.data(for: req),
@@ -240,7 +240,7 @@ public final class AppUpdater: ObservableObject {
         if override == nil, let feedURL = URL(string: Self.fallbackFeedEndpoint) {
             var req = URLRequest(url: feedURL)
             req.setValue("application/atom+xml, text/xml", forHTTPHeaderField: "Accept")
-            req.setValue("APIBar-Updater/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+            req.setValue("HarnessSync-Updater/\(currentVersion)", forHTTPHeaderField: "User-Agent")
             req.timeoutInterval = 8
 
             if let (data, response) = try? await URLSession.shared.data(for: req),
@@ -283,7 +283,7 @@ public final class AppUpdater: ObservableObject {
 
                         let cleanVer = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
                         let htmlURL = URL(string: "https://github.com/\(Self.repoOwner)/\(Self.repoName)/releases/tag/\(tag)")
-                        let downloadURL = URL(string: "https://github.com/\(Self.repoOwner)/\(Self.repoName)/releases/download/\(tag)/APIBar-app.zip")
+                        let downloadURL = URL(string: "https://github.com/\(Self.repoOwner)/\(Self.repoName)/releases/download/\(tag)/HarnessSync-app.zip")
                         return ReleaseInfo(
                             version: cleanVer,
                             title: title,
@@ -300,7 +300,7 @@ public final class AppUpdater: ObservableObject {
         // Strategy 3: GitHub /releases/latest web redirect
         if override == nil, let latestWebURL = URL(string: Self.latestHtmlEndpoint) {
             var req = URLRequest(url: latestWebURL)
-            req.setValue("APIBar-Updater/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+            req.setValue("HarnessSync-Updater/\(currentVersion)", forHTTPHeaderField: "User-Agent")
             req.timeoutInterval = 8
 
             if let (_, response) = try? await URLSession.shared.data(for: req),
@@ -313,7 +313,7 @@ public final class AppUpdater: ObservableObject {
                         title: "Harness Sync v\(cleanVer)",
                         notes: "Latest release available at \(finalURL.absoluteString)",
                         releaseURL: finalURL,
-                        downloadURL: URL(string: "https://github.com/\(Self.repoOwner)/\(Self.repoName)/releases/download/\(tag)/APIBar-app.zip"),
+                        downloadURL: URL(string: "https://github.com/\(Self.repoOwner)/\(Self.repoName)/releases/download/\(tag)/HarnessSync-app.zip"),
                         assetUpdatedAt: nil
                     )
                 }
@@ -339,7 +339,7 @@ public final class AppUpdater: ObservableObject {
             let cleanCur = currentVersion.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
             let isSameVersion = cleanRel == cleanCur
             let isSameVersionUpdated: Bool
-            let installedTimestamp = UserDefaults.standard.double(forKey: "APIBarInstalledAssetTimestamp")
+            let installedTimestamp = UserDefaults.standard.double(forKey: "HarnessSyncInstalledAssetTimestamp") != 0 ? UserDefaults.standard.double(forKey: "HarnessSyncInstalledAssetTimestamp") : UserDefaults.standard.double(forKey: "APIBarInstalledAssetTimestamp")
             let remoteTimestamp = release.assetUpdatedAt?.timeIntervalSince1970 ?? 0
             let alreadyInstalledThisAsset = remoteTimestamp > 0 && abs(remoteTimestamp - installedTimestamp) < 2
 
@@ -368,7 +368,7 @@ public final class AppUpdater: ObservableObject {
             }
 
             // Cooldown check: prevent rapid reinstallations
-            let lastInstallTime = (UserDefaults.standard.object(forKey: "APIBarLastUpdateInstallTime") as? Date) ?? .distantPast
+            let lastInstallTime = ((UserDefaults.standard.object(forKey: "HarnessSyncLastUpdateInstallTime") ?? UserDefaults.standard.object(forKey: "APIBarLastUpdateInstallTime")) as? Date) ?? .distantPast
             let elapsed = Date().timeIntervalSince(lastInstallTime)
 
             if manual {
@@ -441,11 +441,11 @@ public final class AppUpdater: ObservableObject {
     }
 
     public func installUpdate() async {
-        let lastInstallTime = (UserDefaults.standard.object(forKey: "APIBarLastUpdateInstallTime") as? Date) ?? .distantPast
+        let lastInstallTime = ((UserDefaults.standard.object(forKey: "HarnessSyncLastUpdateInstallTime") ?? UserDefaults.standard.object(forKey: "APIBarLastUpdateInstallTime")) as? Date) ?? .distantPast
         guard Date().timeIntervalSince(lastInstallTime) > 60 else {
             return
         }
-        UserDefaults.standard.set(Date(), forKey: "APIBarLastUpdateInstallTime")
+        UserDefaults.standard.set(Date(), forKey: "HarnessSyncLastUpdateInstallTime")
 
         guard let downloadURL else {
             if let releaseURL { NSWorkspace.shared.open(releaseURL) }
@@ -464,7 +464,7 @@ public final class AppUpdater: ObservableObject {
             }
 
             transition(to: .installing(stage: .extracting))
-            let tempExtractDir = FileManager.default.temporaryDirectory.appendingPathComponent("APIBarUpdate-" + UUID().uuidString)
+            let tempExtractDir = FileManager.default.temporaryDirectory.appendingPathComponent("HarnessSyncUpdate-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: tempExtractDir, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: tempExtractDir) }
 
@@ -483,11 +483,11 @@ public final class AppUpdater: ObservableObject {
 
             var destURL = Bundle.main.bundleURL
             if destURL.path.contains(".build") || destURL.path.contains(".cache") || !FileManager.default.isWritableFile(atPath: destURL.path) {
-                destURL = URL(fileURLWithPath: "/Applications/API Bar.app")
+                destURL = URL(fileURLWithPath: "/Applications/Harness Sync.app")
             }
 
             transition(to: .installing(stage: .replacingBundle))
-            let backupURL = destURL.deletingLastPathComponent().appendingPathComponent("APIBar-backup-\(UUID().uuidString).app")
+            let backupURL = destURL.deletingLastPathComponent().appendingPathComponent("HarnessSync-backup-\(UUID().uuidString).app")
             var didBackup = false
             if FileManager.default.fileExists(atPath: destURL.path) {
                 try FileManager.default.moveItem(at: destURL, to: backupURL)
@@ -504,7 +504,7 @@ public final class AppUpdater: ObservableObject {
             }
 
             if let date = self.assetUpdatedAt {
-                UserDefaults.standard.set(date.timeIntervalSince1970, forKey: "APIBarInstalledAssetTimestamp")
+                UserDefaults.standard.set(date.timeIntervalSince1970, forKey: "HarnessSyncInstalledAssetTimestamp")
             }
 
             // Strip any quarantine attribute to ensure Gatekeeper permits in-place relaunch
@@ -529,7 +529,7 @@ public final class AppUpdater: ObservableObject {
             /bin/rm -rf '\(escapedBackup)' 2>/dev/null
             /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f '\(escapedPath)' 2>/dev/null || true
             /bin/sleep 0.1
-            /usr/bin/open '\(escapedPath)' || '\(escapedPath)/Contents/MacOS/APIBar' &
+            /usr/bin/open '\(escapedPath)' || '\(escapedPath)/Contents/MacOS/HarnessSync' &
             """
 
             let relaunch = Process()
@@ -570,8 +570,8 @@ public final class AppUpdater: ObservableObject {
         }
         if response == .alertSecondButtonReturn {
             Task {
-                UserDefaults.standard.removeObject(forKey: "APIBarLastUpdateInstallTime")
-                UserDefaults.standard.removeObject(forKey: "APIBarInstalledAssetTimestamp")
+                UserDefaults.standard.removeObject(forKey: "HarnessSyncLastUpdateInstallTime"); UserDefaults.standard.removeObject(forKey: "APIBarLastUpdateInstallTime")
+                UserDefaults.standard.removeObject(forKey: "HarnessSyncInstalledAssetTimestamp"); UserDefaults.standard.removeObject(forKey: "APIBarInstalledAssetTimestamp")
                 await self.installUpdate()
             }
         }

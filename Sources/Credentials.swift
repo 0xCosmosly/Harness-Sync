@@ -12,16 +12,24 @@ enum ConnectorError: LocalizedError {
 }
 
 enum KeychainVault {
-    static let service = "app.apibar.APIBar.sessions"
+    static let service = "app.harnesssync.HarnessSync.sessions"
+    static let legacyService = "app.apibar.APIBar.sessions"
     /// Test/CLI runs must never read, write, or delete the user's real saved
-    /// sessions. Setting `APIBAR_VAULT_DIR` redirects storage to a scratch
+    /// sessions. Setting `HARNESSSYNC_VAULT_DIR` or `APIBAR_VAULT_DIR` redirects storage to a scratch
     /// directory and disables every Keychain operation.
-    static let isEphemeral = (ProcessInfo.processInfo.environment["APIBAR_VAULT_DIR"]?.isEmpty == false)
+    static let isEphemeral = (ProcessInfo.processInfo.environment["HARNESSSYNC_VAULT_DIR"]?.isEmpty == false || ProcessInfo.processInfo.environment["APIBAR_VAULT_DIR"]?.isEmpty == false)
     static let vaultDir: URL = {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_VAULT_DIR"], !custom.isEmpty {
+        if let custom = ProcessInfo.processInfo.environment["HARNESSSYNC_VAULT_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_VAULT_DIR"], !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
-        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("APIBar/vault")
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let modern = appSupport.appendingPathComponent("HarnessSync/vault")
+        let legacy = appSupport.appendingPathComponent("APIBar/vault")
+        if !FileManager.default.fileExists(atPath: modern.path) && FileManager.default.fileExists(atPath: legacy.path) {
+            try? FileManager.default.createDirectory(at: modern.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? FileManager.default.copyItem(at: legacy, to: modern)
+        }
+        return FileManager.default.fileExists(atPath: modern.path) ? modern : (FileManager.default.fileExists(atPath: legacy.path) ? legacy : modern)
     }()
     // Brave and local sessions use the macOS file-based keychain. Its legacy
     // ACL dialogs also need an explicit interaction policy. Serialize calls so
@@ -47,7 +55,15 @@ enum KeychainVault {
         let context = LAContext(); context.interactionNotAllowed = true
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: account, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne, kSecUseAuthenticationContext as String: context]
         var item: CFTypeRef?
-        let status = try access { SecItemCopyMatching(query as CFDictionary, &item) }
+        var status = try access { SecItemCopyMatching(query as CFDictionary, &item) }
+        if status == errSecItemNotFound {
+            let legacyQuery: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: legacyService, kSecAttrAccount as String: account, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne, kSecUseAuthenticationContext as String: context]
+            let legacyStatus = try access { SecItemCopyMatching(legacyQuery as CFDictionary, &item) }
+            if legacyStatus == errSecSuccess, let bytes = item as? Data {
+                status = legacyStatus
+                try? save(bytes, account: account)
+            }
+        }
         if status == errSecItemNotFound || status == errSecAuthFailed || status == -25293 { return nil }
         if status == errSecSuccess, let bytes = item as? Data {
             try? FileManager.default.createDirectory(at: vaultDir, withIntermediateDirectories: true)

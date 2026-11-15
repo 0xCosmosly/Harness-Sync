@@ -131,7 +131,7 @@ Compile the native release binary and assemble the application bundle:
 ./build.command
 ```
 - Compiles with Swift 6 in release mode (`-O -whole-module-optimization`).
-- Generates `APIBar-app.zip` and installs to `/Applications/API Bar.app`.
+- Generates `HarnessSync-app.zip` and installs to `/Applications/Harness Sync.app`.
 - Applies ad-hoc code signature (`codesign -f -s -`).
 
 ### Git Commit Guidelines

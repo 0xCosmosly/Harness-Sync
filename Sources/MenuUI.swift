@@ -292,7 +292,7 @@ struct BalanceCardContent: View {
 }
 
 struct OverviewCardContent: View {
-    @ObservedObject var app: APIBarApp
+    @ObservedObject var app: HarnessSyncApp
 
     var connectedCount: Int {
         app.activeBalances.filter { app.isConnected($0.id) }.count
@@ -496,7 +496,7 @@ enum SyncStatusPresentation: Equatable {
 /// Compact iCloud sync line for the Overview card. Mirrors the Settings toggle
 /// so the popover answers "is this Mac syncing?" without opening Settings.
 struct ICloudSyncStatusRow: View {
-    @ObservedObject var app: APIBarApp
+    @ObservedObject var app: HarnessSyncApp
     @ObservedObject private var icloud = ICloudSync.shared
 
     private var status: SyncStatusPresentation { SyncStatusPresentation(icloud) }
@@ -543,7 +543,7 @@ struct ICloudSyncStatusRow: View {
 
 /// Full iCloud sync detail tab, shown to the right of Overview while sync is on.
 struct SyncCardContent: View {
-    @ObservedObject var app: APIBarApp
+    @ObservedObject var app: HarnessSyncApp
     @ObservedObject private var icloud = ICloudSync.shared
 
     private var status: SyncStatusPresentation { SyncStatusPresentation(icloud) }
@@ -729,7 +729,7 @@ struct SyncCardContent: View {
 }
 
 @MainActor final class SyncCard: NSView {
-    init(app: APIBarApp) {
+    init(app: HarnessSyncApp) {
         let host = VibrantHost(rootView: SyncCardContent(app: app))
         super.init(frame: NSRect(x: 0, y: 0, width: kCardWidth, height: 240))
         host.frame = bounds
@@ -743,7 +743,7 @@ struct SyncCardContent: View {
 }
 
 @MainActor final class OverviewCard: NSView {
-    init(app: APIBarApp) {
+    init(app: HarnessSyncApp) {
         let host = VibrantHost(rootView: OverviewCardContent(app: app))
         super.init(frame: NSRect(x: 0, y: 0, width: kCardWidth, height: 185))
         host.frame = bounds
@@ -778,7 +778,7 @@ struct SyncCardContent: View {
 
 struct ProviderDropDelegate: DropDelegate {
     let item: Balance
-    let app: APIBarApp
+    let app: HarnessSyncApp
     @Binding var draggedItem: Balance?
 
     func dropEntered(info: DropInfo) {
@@ -802,7 +802,7 @@ struct ProviderDropDelegate: DropDelegate {
 }
 
 struct ManageProvidersSheet: View {
-    @ObservedObject var app: APIBarApp
+    @ObservedObject var app: HarnessSyncApp
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
 
@@ -998,7 +998,7 @@ struct ManageProvidersSheet: View {
 /// One provider row in Settings. Extracted from SettingsPane so the SwiftUI type
 /// checker can handle it and so the row's behavior is testable in isolation.
 struct ProviderSettingsRow: View {
-    @ObservedObject var app: APIBarApp
+    @ObservedObject var app: HarnessSyncApp
     let index: Int
     let balance: Balance
     @Binding var draggedBalance: Balance?
@@ -1224,10 +1224,10 @@ struct ProviderSettingsRow: View {
     }
 }
 
-/// The coding-agent integrations API Bar can sync. OpenCode, Pi, and OMP are combined
+/// The coding-agent integrations Harness Sync can sync. OpenCode, Pi, and OMP are combined
 /// into a concise checkmark interface to keep Settings and Onboarding compact and clean.
 struct IntegrationSyncSection: View {
-    @ObservedObject var app: APIBarApp
+    @ObservedObject var app: HarnessSyncApp
     @ObservedObject private var icloud = ICloudSync.shared
     var compact = false
 
@@ -1313,7 +1313,7 @@ struct IntegrationSyncSection: View {
 }
 
 struct OnboardingView: View {
-    @ObservedObject var app: APIBarApp
+    @ObservedObject var app: HarnessSyncApp
     let onFinish: () -> Void
     @State private var step = 0
     @State private var login = SMAppService.mainApp.status == .enabled
@@ -1857,7 +1857,7 @@ public enum AFMWorkflowState: Equatable {
 }
 
 struct SettingsPane: View {
-    @ObservedObject var app: APIBarApp
+    @ObservedObject var app: HarnessSyncApp
     @ObservedObject private var updater = AppUpdater.shared
     @ObservedObject private var icloud = ICloudSync.shared
     @State private var login = SMAppService.mainApp.status == .enabled
@@ -2441,7 +2441,7 @@ struct SettingsPane: View {
 
                     if let dir = icloud.scriptableDocumentsDirectoryURL {
                         Button("Reveal Script in Finder") {
-                            NSWorkspace.shared.selectFile(dir.appendingPathComponent("API Bar.js").path, inFileViewerRootedAtPath: dir.path)
+                            NSWorkspace.shared.selectFile(dir.appendingPathComponent("Harness Sync.js").path, inFileViewerRootedAtPath: dir.path)
                         }
                         .buttonStyle(PaperWhiteButtonStyle())
                         .padding(.top, 2)

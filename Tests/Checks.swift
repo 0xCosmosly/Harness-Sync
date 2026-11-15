@@ -5,7 +5,7 @@ import AppKit
 @main struct Checks {
     static func require(_ check: @autoclosure () throws -> Bool) throws { let result = try check(); precondition(result) }
     static func main() async throws {
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("APIBarBookmarkCheck-" + UUID().uuidString)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("HarnessSyncBookmarkCheck-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let bookmark = try ProfileBookmark.create(folder)
@@ -1189,7 +1189,7 @@ func syncChangeLogChecks() throws {
 
 func codexbarPacingChecks() throws {
     // Real Mistral snapshot shape: per-day token ledger plus a dollar window
-    // summary. Pacing must mirror API Bar's cards: tokens per day over active
+    // summary. Pacing must mirror Harness Sync's cards: tokens per day over active
     // days, runway from remaining spend over average active-day spend.
     let usage: [String: Any] = [
         "mistralUsage": [
@@ -1333,7 +1333,7 @@ func secretAuditChecks() throws {
 /// endpoint still parses.
 @MainActor
 func updaterChecks() async throws {
-    let fixtures = FileManager.default.temporaryDirectory.appendingPathComponent("APIBarUpdater-" + UUID().uuidString)
+    let fixtures = FileManager.default.temporaryDirectory.appendingPathComponent("HarnessSyncUpdater-" + UUID().uuidString)
     try FileManager.default.createDirectory(at: fixtures, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: fixtures) }
 
@@ -1346,7 +1346,7 @@ func updaterChecks() async throws {
     func releaseJSON(tag: String, name: String, zipSize: Int, updated: String = "2026-11-05T12:00:00Z") -> String {
         """
         {"tag_name":"\(tag)","name":"\(name)","body":"notes for \(tag)","html_url":"https://github.com/0xCosmosly/Harness-Sync/releases/tag/\(tag)",
-         "assets":[{"name":"APIBar-app.zip","size":\(zipSize),"browser_download_url":"https://github.com/0xCosmosly/Harness-Sync/releases/download/\(tag)/APIBar-app.zip","updated_at":"\(updated)"}]}
+         "assets":[{"name":"HarnessSync-app.zip","size":\(zipSize),"browser_download_url":"https://github.com/0xCosmosly/Harness-Sync/releases/download/\(tag)/HarnessSync-app.zip","updated_at":"\(updated)"}]}
         """
     }
 
@@ -1365,18 +1365,18 @@ func updaterChecks() async throws {
     precondition(localVersion == "0.5.10", "Expected the updater to report 0.5.10, got \(localVersion)")
 
     // A newer release must be detected, with the zip asset selected.
-    setenv("APIBAR_UPDATER_ENDPOINT", try serve(releaseJSON(tag: "v0.6.0", name: "API Bar 0.6.0", zipSize: 2_200_000), at: "newer"), 1)
+    setenv("HARNESSSYNC_UPDATER_ENDPOINT", try serve(releaseJSON(tag: "v0.6.0", name: "Harness Sync 0.6.0", zipSize: 2_200_000), at: "newer"), 1)
     let newer = try await updater.fetchReleaseInfo()
     precondition(newer.version == "0.6.0", "Tag v0.6.0 must parse to 0.6.0, got \(newer.version)")
     precondition(AppUpdater.isVersion(newer.version, newerThan: localVersion), "0.6.0 must be newer than \(localVersion)")
-    precondition(newer.downloadURL?.lastPathComponent == "APIBar-app.zip", "Updater must select the zip asset, got \(newer.downloadURL?.absoluteString ?? "nil")")
+    precondition(newer.downloadURL?.lastPathComponent == "HarnessSync-app.zip", "Updater must select the zip asset, got \(newer.downloadURL?.absoluteString ?? "nil")")
     precondition(newer.notes.contains("notes for v0.6.0"))
     await updater.checkForUpdates(manual: false)
     precondition(updater.updateAvailable, "Newer version 0.6.0 must set updateAvailable")
     precondition(updater.isSemverNewerAvailable, "0.6.0 must report isSemverNewerAvailable")
 
     // The same version must not offer an update, even though an asset exists.
-    setenv("APIBAR_UPDATER_ENDPOINT", try serve(releaseJSON(tag: "v0.5.10", name: "API Bar 0.5.10", zipSize: 2_100_000), at: "same"), 1)
+    setenv("HARNESSSYNC_UPDATER_ENDPOINT", try serve(releaseJSON(tag: "v0.5.10", name: "Harness Sync 0.5.10", zipSize: 2_100_000), at: "same"), 1)
     let same = try await updater.fetchReleaseInfo()
     precondition(same.version == "0.5.10")
     precondition(!AppUpdater.isVersion(same.version, newerThan: localVersion), "Same version must not be treated as an update")
@@ -1386,32 +1386,32 @@ func updaterChecks() async throws {
     precondition(updater.statusMessage.contains("Up to date"), "Expected Up to date status, got \(updater.statusMessage)")
 
     // An older release must never trigger a downgrade.
-    setenv("APIBAR_UPDATER_ENDPOINT", try serve(releaseJSON(tag: "v0.5.9", name: "API Bar 0.5.9", zipSize: 2_073_811), at: "older"), 1)
+    setenv("HARNESSSYNC_UPDATER_ENDPOINT", try serve(releaseJSON(tag: "v0.5.9", name: "Harness Sync 0.5.9", zipSize: 2_073_811), at: "older"), 1)
     let older = try await updater.fetchReleaseInfo()
     precondition(!AppUpdater.isVersion(older.version, newerThan: localVersion), "Older release must not be an update")
 
     // A release without a zip asset still yields a deterministic download URL.
     let noAsset = """
-    {"tag_name":"v0.6.0","name":"API Bar 0.6.0","body":"x","html_url":"https://github.com/0xCosmosly/Harness-Sync/releases/tag/v0.6.0","assets":[]}
+    {"tag_name":"v0.6.0","name":"Harness Sync 0.6.0","body":"x","html_url":"https://github.com/0xCosmosly/Harness-Sync/releases/tag/v0.6.0","assets":[]}
     """
-    setenv("APIBAR_UPDATER_ENDPOINT", try serve(noAsset, at: "noasset"), 1)
+    setenv("HARNESSSYNC_UPDATER_ENDPOINT", try serve(noAsset, at: "noasset"), 1)
     let fallback = try await updater.fetchReleaseInfo()
-    precondition(fallback.downloadURL?.absoluteString == "https://github.com/0xCosmosly/Harness-Sync/releases/download/v0.6.0/APIBar-app.zip",
+    precondition(fallback.downloadURL?.absoluteString == "https://github.com/0xCosmosly/Harness-Sync/releases/download/v0.6.0/HarnessSync-app.zip",
                  "Missing asset must fall back to the conventional zip URL, got \(fallback.downloadURL?.absoluteString ?? "nil")")
 
     // A broken fixture must fail loudly rather than reporting an update.
-    setenv("APIBAR_UPDATER_ENDPOINT", try serve("{\"unexpected\":true}", at: "broken"), 1)
+    setenv("HARNESSSYNC_UPDATER_ENDPOINT", try serve("{\"unexpected\":true}", at: "broken"), 1)
     do {
         _ = try await updater.fetchReleaseInfo()
         preconditionFailure("Updater accepted a release payload with no tag")
     } catch { }
 
-    unsetenv("APIBAR_UPDATER_ENDPOINT")
+    unsetenv("HARNESSSYNC_UPDATER_ENDPOINT")
 
     // Live check: the real endpoint must still parse. Skipped offline so the suite
     // stays deterministic, but reported so a silent outage is visible.
     var liveReport = "skipped (offline)"
-    if ProcessInfo.processInfo.environment["APIBAR_SKIP_NETWORK"] == nil {
+    if (ProcessInfo.processInfo.environment["HARNESSSYNC_SKIP_NETWORK"] ?? ProcessInfo.processInfo.environment["APIBAR_SKIP_NETWORK"]) == nil {
         do {
             let live = try await updater.fetchReleaseInfo()
             precondition(!live.version.isEmpty)

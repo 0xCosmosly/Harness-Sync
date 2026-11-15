@@ -23,7 +23,7 @@ SOFTWARE.
 
 Provider tab event handling follows the approach in CodexBar’s
 StatusItemController+SwitcherViews.swift (ProviderSwitcherView), under the MIT
-license above. API Bar’s brand artwork is original vector work; the historical
+license above. Harness Sync’s brand artwork is original vector work; the historical
 mark studied for its inward-arrow concept was Jacques Nathan-Garamond’s #1329,
 published in Yasaburo Kuwayama, Trademarks & Symbols, Volume 2 (1973), p. 138.
 No symbools archive artwork is included in the application.

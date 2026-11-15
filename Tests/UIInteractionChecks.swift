@@ -32,7 +32,7 @@ import SwiftUI
     @MainActor static func main() async throws {
         requireIsolatedTestEnvironment()
         _ = NSApplication.shared
-        let app = APIBarApp()
+        let app = HarnessSyncApp()
         app.setSortMode(.manual)
         // Start from a known sync state: an earlier aborted run can leave the
         // toggle persisted as on, which would insert the Sync tab and shift
@@ -913,7 +913,7 @@ import SwiftUI
         precondition(updater.isChecking == true)
         precondition(updater.statusMessage == "Checking for updates…")
 
-        updater.transition(to: .available(version: "1.0.0", title: "API Bar 1.0.0", notes: "Big update", releaseURL: nil, downloadURL: nil, assetUpdatedAt: nil, isRebuild: false))
+        updater.transition(to: .available(version: "1.0.0", title: "Harness Sync 1.0.0", notes: "Big update", releaseURL: nil, downloadURL: nil, assetUpdatedAt: nil, isRebuild: false))
         precondition(updater.updateAvailable == true)
         precondition(updater.latestVersion == "1.0.0")
 

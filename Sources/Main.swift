@@ -27,7 +27,7 @@ enum Main {
             }
         }
         let application = NSApplication.shared
-        let delegate = APIBarApp()
+        let delegate = HarnessSyncApp()
         application.delegate = delegate
         withExtendedLifetime(delegate) { application.run() }
     }

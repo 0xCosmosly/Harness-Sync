@@ -84,8 +84,10 @@ public enum BrowserAccessState: Equatable, Sendable {
     }
 }
 
+typealias APIBarApp = HarnessSyncApp
+
 @MainActor
-final class APIBarApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindowDelegate, ObservableObject {
+final class HarnessSyncApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindowDelegate, ObservableObject {
     @Published public private(set) var providerConnectionStates: [String: ProviderConnectionState] = [:]
 
     public var menuBarPresentationMode: MenuBarPresentationMode {
@@ -556,10 +558,17 @@ final class APIBarApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindow
     /// Test/CLI harnesses set `APIBAR_DATA_DIR` so they never overwrite the
     /// user's real balance file.
     let dataURL: URL = {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_DATA_DIR"], !custom.isEmpty {
+        if let custom = ProcessInfo.processInfo.environment["HARNESSSYNC_DATA_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_DATA_DIR"], !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true).appendingPathComponent("balances.json")
         }
-        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("APIBar/balances.json")
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let modern = appSupport.appendingPathComponent("HarnessSync/balances.json")
+        let legacy = appSupport.appendingPathComponent("APIBar/balances.json")
+        if !FileManager.default.fileExists(atPath: modern.path) && FileManager.default.fileExists(atPath: legacy.path) {
+            try? FileManager.default.createDirectory(at: modern.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? FileManager.default.copyItem(at: legacy, to: modern)
+        }
+        return FileManager.default.fileExists(atPath: modern.path) ? modern : (FileManager.default.fileExists(atPath: legacy.path) ? legacy : modern)
     }()
     /// The bundle identifier moved from the legacy local ID to `app.apibar.APIBar`.
     /// macOS keys preferences by bundle id, so carry the old domain's keys over
@@ -571,7 +580,7 @@ final class APIBarApp: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindow
         guard !defaults.bool(forKey: marker) else { return }
         defer { defaults.set(true, forKey: marker) }
 
-        for legacyDomain in ["local.apibar.APIBar", "app.apibar.legacy"] {
+        for legacyDomain in ["local.apibar.APIBar", "app.apibar.legacy", "app.apibar.APIBar"] {
             if let legacy = UserDefaults.standard.persistentDomain(forName: legacyDomain), !legacy.isEmpty {
                 for (key, value) in legacy where key != marker && defaults.object(forKey: key) == nil {
                     defaults.set(value, forKey: key)

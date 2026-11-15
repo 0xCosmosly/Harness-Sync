@@ -1,6 +1,6 @@
 import AppKit
 
-/// Original API Bar artwork: opposed inputs and two open enclosing arcs.
+/// Original Harness Sync artwork: opposed inputs and two open enclosing arcs.
 /// Uses the inward-connection concept studied in Kuwayama, not a traced mark.
 @MainActor enum BrandMark {
     static func draw(in rect: NSRect) {

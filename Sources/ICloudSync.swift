@@ -155,7 +155,7 @@ final class ICloudSync: ObservableObject {
     static let lastChangeSummaryKey = "ICloudSyncLastChangeSummary"
     static let lastChangeNarrativeKey = "ICloudSyncLastChangeNarrative"
     static let lastChangeNarrativeSourceKey = "ICloudSyncLastChangeNarrativeSource"
-    static let deviceIdKey = "APIBarDeviceUUID"
+    static let deviceIdKey = "HarnessSyncDeviceUUID"
 
     @Published public private(set) var state: CloudSyncState = .disabled
     @Published private(set) var isSyncing: Bool = false
@@ -229,7 +229,7 @@ final class ICloudSync: ObservableObject {
         return dict
     }
 
-    private weak var app: APIBarApp?
+    private weak var app: HarnessSyncApp?
     private var pushDebounceTask: Task<Void, Never>?
     private var monitorSource: DispatchSourceFileSystemObject?
     private var monitorFD: Int32 = -1
@@ -265,7 +265,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var baseDirectoryURL: URL? {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_ICLOUD_DIR"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_ICLOUD_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_ICLOUD_DIR"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
         if let ubiquity = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
@@ -293,7 +293,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var scriptableDocumentsDirectoryURL: URL? {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_SCRIPTABLE_DIR"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_SCRIPTABLE_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_SCRIPTABLE_DIR"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
         let scriptableDocs = FileManager.default.homeDirectoryForCurrentUser
@@ -302,7 +302,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var scriptableSnapshotURL: URL? {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_SCRIPTABLE_FILE"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_SCRIPTABLE_FILE"] ?? ProcessInfo.processInfo.environment["APIBAR_SCRIPTABLE_FILE"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom)
         }
         if let dir = scriptableDocumentsDirectoryURL {
@@ -313,13 +313,13 @@ final class ICloudSync: ObservableObject {
 
     var scriptableScriptURL: URL? {
         if let dir = scriptableDocumentsDirectoryURL {
-            return dir.appendingPathComponent("API Bar.js")
+            return dir.appendingPathComponent("Harness Sync.js")
         }
         return nil
     }
 
     var localOpenCodeURL: URL {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_OPENCODE_FILE"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_OPENCODE_FILE"] ?? ProcessInfo.processInfo.environment["APIBAR_OPENCODE_FILE"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom)
         }
         return FileManager.default.homeDirectoryForCurrentUser
@@ -331,7 +331,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var localOpenCodeCredentialsURL: URL? {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_OPENCODE_CREDENTIALS_FILE"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_OPENCODE_CREDENTIALS_FILE"] ?? ProcessInfo.processInfo.environment["APIBAR_OPENCODE_CREDENTIALS_FILE"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom)
         }
         return nil
@@ -342,7 +342,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var localPiDirectoryURL: URL {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_PI_DIR"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_PI_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_PI_DIR"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
         if let custom = ProcessInfo.processInfo.environment["PI_CODING_AGENT_DIR"], !custom.isEmpty {
@@ -361,7 +361,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var localOmpDirectoryURL: URL {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_OMP_DIR"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_OMP_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_OMP_DIR"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
         if let custom = ProcessInfo.processInfo.environment["OMP_AGENT_DIR"], !custom.isEmpty {
@@ -376,7 +376,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var localOmpCredentialsURL: URL? {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_OMP_CREDENTIALS_FILE"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_OMP_CREDENTIALS_FILE"] ?? ProcessInfo.processInfo.environment["APIBAR_OMP_CREDENTIALS_FILE"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom)
         }
         return nil
@@ -387,7 +387,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var localT3DirectoryURL: URL {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_T3_DIR"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_T3_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_T3_DIR"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
         if let custom = ProcessInfo.processInfo.environment["T3_USERDATA_DIR"], !custom.isEmpty {
@@ -402,7 +402,7 @@ final class ICloudSync: ObservableObject {
     }
 
     var localT3CredentialsURL: URL? {
-        if let custom = ProcessInfo.processInfo.environment["APIBAR_T3_CREDENTIALS_FILE"], !custom.isEmpty {
+        if let custom = (ProcessInfo.processInfo.environment["HARNESSSYNC_T3_CREDENTIALS_FILE"] ?? ProcessInfo.processInfo.environment["APIBAR_T3_CREDENTIALS_FILE"]), !custom.isEmpty {
             return URL(fileURLWithPath: custom)
         }
         let clerkURL = localT3DirectoryURL.appendingPathComponent("clerk/clerk-tokens.json")
@@ -490,7 +490,7 @@ final class ICloudSync: ObservableObject {
         updateStatusMessage()
     }
 
-    func attach(app: APIBarApp) {
+    func attach(app: HarnessSyncApp) {
         self.app = app
         _ = checkAvailability()
         if isEnabled {
@@ -668,7 +668,7 @@ final class ICloudSync: ObservableObject {
     func installScriptableTemplateIfNeeded() {
         guard let dir = scriptableDocumentsDirectoryURL else { return }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let scriptPath = dir.appendingPathComponent("API Bar.js")
+        let scriptPath = dir.appendingPathComponent("Harness Sync.js")
         let existing = try? String(contentsOf: scriptPath, encoding: .utf8)
         let template = ScriptableWidgetTemplate.scriptSource
         // Refresh whenever the installed copy diverges from the embedded
@@ -767,7 +767,7 @@ final class ICloudSync: ObservableObject {
             }
         }
 
-        // Token pacing, mirroring API Bar's own cards: tokens per day plus a
+        // Token pacing, mirroring Harness Sync's own cards: tokens per day plus a
         // spend-based runway. Dollar summaries are unreliable across CodexBar
         // providers (not all models publish pricing), so the widget prefers
         // this pacing line over the dollar reset description when available.
@@ -1051,7 +1051,7 @@ final class ICloudSync: ObservableObject {
             }
         }
         guard let bin = findOpenCodeBinary() else { return false }
-        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("apibar_auth_\(UUID().uuidString).json")
+        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("harnesssync_auth_\(UUID().uuidString).json")
         do {
             try data.write(to: tempURL, options: .atomic)
             try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: tempURL.path)
@@ -1071,7 +1071,7 @@ final class ICloudSync: ObservableObject {
     }
 
     func checkAvailability() -> Bool {
-        if ProcessInfo.processInfo.environment["APIBAR_ICLOUD_DIR"] != nil {
+        if (ProcessInfo.processInfo.environment["HARNESSSYNC_ICLOUD_DIR"] ?? ProcessInfo.processInfo.environment["APIBAR_ICLOUD_DIR"]) != nil {
             isAvailable = true
             return true
         }
@@ -1151,7 +1151,7 @@ final class ICloudSync: ObservableObject {
            let remoteManifest = try? JSONDecoder().decode(ICloudManifest.self, from: data),
            remoteManifest.deviceId != self.deviceId,
            let remoteBuild = remoteManifest.appBuildTimestamp {
-            let lastInstall = (UserDefaults.standard.object(forKey: "APIBarLastUpdateInstallTime") as? Date) ?? .distantPast
+            let lastInstall = (UserDefaults.standard.object(forKey: "HarnessSyncLastUpdateInstallTime") as? Date) ?? .distantPast
             let localTS = max(AppUpdater.localBuildDate.timeIntervalSince1970, lastInstall.timeIntervalSince1970)
             if remoteBuild > localTS + 60 {
                 Task { @MainActor in
@@ -1165,7 +1165,7 @@ final class ICloudSync: ObservableObject {
            let data = try? Data(contentsOf: settingsURL),
            let remoteSettings = try? JSONDecoder().decode(ICloudSettings.self, from: data) {
 
-            let localSettingsTS = (UserDefaults.standard.object(forKey: "APIBarSettingsModified") as? Date) ?? .distantPast
+            let localSettingsTS = (UserDefaults.standard.object(forKey: "HarnessSyncSettingsModified") as? Date) ?? .distantPast
             if remoteSettings.lastModified > localSettingsTS {
                 if let remoteRemoved = remoteSettings.removedProviders {
                     let localRemoved = UserDefaults.standard.stringArray(forKey: "RemovedProviders") ?? []
@@ -1243,7 +1243,7 @@ final class ICloudSync: ObservableObject {
                     UserDefaults.standard.set(remoteScriptable, forKey: Self.scriptableEnabledKey)
                     didChangeLocally = true
                 }
-                UserDefaults.standard.set(remoteSettings.lastModified, forKey: "APIBarSettingsModified")
+                UserDefaults.standard.set(remoteSettings.lastModified, forKey: "HarnessSyncSettingsModified")
             }
         }
 
@@ -1680,7 +1680,7 @@ final class ICloudSync: ObservableObject {
 
             // 2. Write settings.json
             if let settingsURL = settingsURL {
-                let localSettingsTS = (UserDefaults.standard.object(forKey: "APIBarSettingsModified") as? Date) ?? Date()
+                let localSettingsTS = (UserDefaults.standard.object(forKey: "HarnessSyncSettingsModified") as? Date) ?? Date()
                 let settings = ICloudSettings(
                     sortMode: app.sortMode.rawValue,
                     mergeIcons: app.mergeIcons,
@@ -2088,7 +2088,7 @@ final class ICloudSync: ObservableObject {
                 guard remoteManifest.deviceId != self.deviceId else { return }
 
                 if let remoteBuild = remoteManifest.appBuildTimestamp {
-                    let lastInstall = (UserDefaults.standard.object(forKey: "APIBarLastUpdateInstallTime") as? Date) ?? .distantPast
+                    let lastInstall = (UserDefaults.standard.object(forKey: "HarnessSyncLastUpdateInstallTime") as? Date) ?? .distantPast
                     let localTS = max(AppUpdater.localBuildDate.timeIntervalSince1970, lastInstall.timeIntervalSince1970)
                     if remoteBuild > localTS + 60 {
                         Task { @MainActor in

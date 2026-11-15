@@ -4,7 +4,7 @@ import Foundation
 /// shared by the iCloud snapshot writer and the sandboxed test suite. Kept
 /// free of AppKit/UI dependencies so `check.command` can compile it directly.
 enum CodexBarPacing {
-    /// Derives API Bar-style token pacing from a CodexBar provider snapshot:
+    /// Derives Harness Sync-style token pacing from a CodexBar provider snapshot:
     /// `tokensPerDay` over active usage days, and `runwayDays` from the
     /// window's remaining spend over the average active-day spend. Returns nil
     /// when the provider publishes no per-day token ledger (e.g. quota-window

@@ -119,7 +119,7 @@ actor SessionHTTP {
         req.httpMethod = "POST"
         req.setValue("application/x-amz-json-1.1", forHTTPHeaderField: "Content-Type")
         req.setValue("AWSCognitoIdentityProviderService.InitiateAuth", forHTTPHeaderField: "X-Amz-Target")
-        req.setValue("APIBar/0.2 (macOS)", forHTTPHeaderField: "User-Agent")
+        req.setValue("HarnessSync/0.2 (macOS)", forHTTPHeaderField: "User-Agent")
 
         let payload: [String: Any] = [
             "AuthFlow": "REFRESH_TOKEN_AUTH",
@@ -177,7 +177,7 @@ actor SessionHTTP {
         var req = URLRequest(url:url)
         req.httpMethod = body == nil ? "GET" : "POST"; req.httpBody = body
         req.setValue("application/json",forHTTPHeaderField:"Accept")
-        req.setValue("APIBar/0.2 (macOS)",forHTTPHeaderField:"User-Agent")
+        req.setValue("HarnessSync/0.2 (macOS)",forHTTPHeaderField:"User-Agent")
         req.setValue(cookies.filter { cookie in
             let domain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
             let matches = cookie.domain.hasPrefix(".") ? (host == domain || host.hasSuffix("."+domain)) : host == domain

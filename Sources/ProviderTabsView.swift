@@ -346,11 +346,11 @@ struct ProviderTabItem: Equatable {
 }
 
 @MainActor final class MergedMenuView: NSView {
-    unowned let app: APIBarApp
+    unowned let app: HarnessSyncApp
     var tabs: ProviderTabsView
     private var detail: NSView?
 
-    init(app: APIBarApp) {
+    init(app: HarnessSyncApp) {
         self.app = app
         let items = ProviderTabsView.defaultItems(balances: app.balances, includeSync: ICloudSync.shared.isEnabled)
         tabs = ProviderTabsView(items: items, selectedID: app.mergedProvider) { [weak app] id in

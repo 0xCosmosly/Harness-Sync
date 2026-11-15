@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleExecutable</key>
-	<string>APIBar</string>
+	<string>HarnessSync</string>
 	<key>CFBundleIdentifier</key>
-	<string>app.apibar.APIBar</string>
+	<string>app.harnesssync.HarnessSync</string>
 	<key>CFBundleName</key>
 	<string>Harness Sync</string>
 	<key>CFBundleDisplayName</key>
@@ -31,9 +31,9 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>APIBar. Provider symbols follow CodexBar (MIT).</string>
+	<string>Harness Sync. Provider symbols follow CodexBar (MIT).</string>
 	<key>CFBundleIconFile</key>
-	<string>APIBarConverge</string>
+	<string>AppIcon</string>
 	<key>NSAppDataUsageDescription</key>
 	<string>Harness Sync reads your selected browser profile to connect your Google Cloud, Fireworks, Crowbot, Google AI Studio, Cerebras, Venice AI, Refuseless, Lutheos, Unaligned, Yeta, and Heimdallm sessions. Credentials stay in macOS Keychain.</string>
 </dict>

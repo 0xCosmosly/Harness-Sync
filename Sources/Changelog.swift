@@ -89,7 +89,7 @@ public final class ChangelogManager: ObservableObject {
         guard let apiURL = URL(string: "https://api.github.com/repos/0xCosmosly/Harness-Sync/releases?per_page=20") else { return }
         var req = URLRequest(url: apiURL)
         req.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        req.setValue("APIBar-Changelog/\(AppUpdater.shared.currentVersion)", forHTTPHeaderField: "User-Agent")
+        req.setValue("HarnessSync-Changelog/\(AppUpdater.shared.currentVersion)", forHTTPHeaderField: "User-Agent")
         req.timeoutInterval = 8
 
         do {
@@ -106,7 +106,7 @@ public final class ChangelogManager: ObservableObject {
             for item in jsonArray {
                 guard let tagName = item["tag_name"] as? String else { continue }
                 let ver = tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
-                let title = item["name"] as? String ?? "API Bar \(tagName)"
+                let title = item["name"] as? String ?? "Harness Sync \(tagName)"
                 let rawBody = item["body"] as? String ?? ""
                 let htmlUrl = (item["html_url"] as? String).flatMap { URL(string: $0) }
 
@@ -709,7 +709,7 @@ public struct ChangelogView: View {
                         .frame(width: 32, height: 32)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("API Bar")
+                        Text("Harness Sync")
                             .font(.title3)
                             .fontWeight(.bold)
                             .foregroundStyle(Color.primary)

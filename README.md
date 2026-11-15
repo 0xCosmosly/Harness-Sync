@@ -184,11 +184,11 @@ Mirror your live macOS menu bar gauges, remaining credits, and token runway paci
 1. **Enable in Desktop App**:
    - Open Harness Sync **Settings** on your Mac.
    - Under iCloud, toggle **Sync with iPhone (Scriptable Widget)**.
-   - Harness Sync will automatically generate and maintain `API Bar.js` in your iCloud Drive Scriptable directory (`iCloud/Scriptable/API Bar.js`).
+   - Harness Sync will automatically generate and maintain `Harness Sync.js` in your iCloud Drive Scriptable directory (`iCloud/Scriptable/Harness Sync.js`).
 2. **Install Scriptable on iPhone / iPad**:
    - Download the free [Scriptable app](https://apps.apple.com/app/scriptable/id1405459188) from the App Store.
 3. **Open Scriptable**:
-   - Launch Scriptable once on your iPhone. Thanks to iCloud, **`API Bar`** will automatically appear in your scripts list.
+   - Launch Scriptable once on your iPhone. Thanks to iCloud, **`Harness Sync`** will automatically appear in your scripts list.
 4. **Add the Home Screen Widget**:
    - Go to your iPhone Home Screen, touch and hold an empty area until the apps jiggle.
    - Tap the **`+`** button in the upper-left corner.
@@ -196,7 +196,7 @@ Mirror your live macOS menu bar gauges, remaining credits, and token runway paci
    - Tap **Add Widget**.
 5. **Configure the Widget**:
    - Tap the widget while apps are jiggling (or long-press it and choose **Edit Widget**).
-   - In the **Script** parameter, select **`API Bar`**.
+   - In the **Script** parameter, select **`Harness Sync`**.
    - In **When Interacting**, choose **Run Script** or **Open App**.
 6. **Done!** Your Home Screen widget will now automatically update in the background with live credit balances and runway estimates from your Mac.
 
