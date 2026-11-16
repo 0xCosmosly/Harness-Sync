@@ -750,6 +750,31 @@ final class ICloudSync: ObservableObject {
         }
     }
 
+    /// The snapshot carries per-minute timestamps, so a plain byte compare
+    /// rewrote it every sync pass. Each rewrite makes iCloud on the phone
+    /// replace its copy, and a background widget that reads mid-replace gets
+    /// nothing. Rewrite only when the shown data changes, or every 10 minutes
+    /// so other Macs still see this one as recent.
+    static func scriptableSnapshotNeedsWrite(existing: Data?, new: Data) -> Bool {
+        guard let existing, existing != new else { return existing == nil }
+        guard let old = try? JSONSerialization.jsonObject(with: existing) as? [String: Any],
+              let fresh = try? JSONSerialization.jsonObject(with: new) as? [String: Any] else { return true }
+        func stripped(_ snap: [String: Any]) -> [String: Any] {
+            var s = snap
+            s.removeValue(forKey: "balancesUpdatedAt")
+            if var cb = s["codexbar"] as? [String: Any] {
+                cb.removeValue(forKey: "writtenAt")
+                cb.removeValue(forKey: "userActiveAt")
+                s["codexbar"] = cb
+            }
+            return s
+        }
+        if !NSDictionary(dictionary: stripped(old)).isEqual(to: stripped(fresh)) { return true }
+        let oldWritten = (old["codexbar"] as? [String: Any])?["writtenAt"] as? Double ?? 0
+        let newWritten = (fresh["codexbar"] as? [String: Any])?["writtenAt"] as? Double ?? 0
+        return newWritten - oldWritten >= 10 * 60
+    }
+
     func installScriptableTemplateIfNeeded() {
         guard let dir = scriptableDocumentsDirectoryURL else { return }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -1801,7 +1826,7 @@ final class ICloudSync: ObservableObject {
                     if let scriptableData = generateScriptablePayload(balances: app.menuBarVisibleBalances, activeBalances: app.activeBalances, existingSnapshot: previousSnapshot) {
                         if let scriptableURL = scriptableSnapshotURL {
                             let existingScriptable = try? Data(contentsOf: scriptableURL)
-                            if existingScriptable != scriptableData {
+                            if Self.scriptableSnapshotNeedsWrite(existing: existingScriptable, new: scriptableData) {
                                 // In place, not atomic: a temp-file rename in the
                                 // iCloud-synced Scriptable directory transiently
                                 // removes the snapshot mid-sync, making the widget
