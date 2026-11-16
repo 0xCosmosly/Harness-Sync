@@ -304,7 +304,7 @@ This means your browser session cookie has expired or was signed out. Simply vis
 
 ## 🛠️ Developer & Agent Guide
 
-Are you contributing to Harness Sync or running an automated AI coding assistant (Gemini, Claude Code, Cursor, Codex, Antigravity, Aider)?
+Are you contributing to Harness Sync or running an automated AI coding assistant (Gemini, Cursor, Codex, Antigravity, Aider)?
 
 See the comprehensive **[Agent Guide & Architecture Specification (AGENTS.md)](AGENTS.md)** for:
 - Core architectural invariants and security protocols

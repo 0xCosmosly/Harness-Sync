@@ -1,6 +1,6 @@
 # 🤖 Agent Guide & Architecture Specification
 
-> **For AI Coding Agents & Automated Planners** (Gemini, Claude Code, Cursor, Codex, Antigravity, Aider, OpenCode, Pi).  
+> **For AI Coding Agents & Automated Planners** (Gemini, Cursor, Codex, Antigravity, Aider, OpenCode, Pi).  
 > This file outlines architectural invariants, build/test protocols, security constraints, and extension patterns for **Harness Sync** (repository: `0xCosmosly/Harness-Sync`).
 
 ---
