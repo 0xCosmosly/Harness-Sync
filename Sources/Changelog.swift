@@ -70,7 +70,7 @@ public final class ChangelogManager: ObservableObject {
         if entries.contains(where: { $0.isCurrent(currentVersion: current) }) {
             self.selectedVersion = current
         } else {
-            self.selectedVersion = entries.first?.version ?? "0.5.0"
+            self.selectedVersion = entries.first?.version ?? "0.3.0"
         }
     }
 
@@ -162,22 +162,61 @@ public final class ChangelogManager: ObservableObject {
     public static func builtInEntries() -> [ChangelogEntry] {
         return [
             ChangelogEntry(
-                version: "0.5.10",
+                version: "0.9.0",
+                releaseDate: "November 16, 2026",
+                title: "Harness Sync 0.9.0 — New Name, T3 Sync & a Steadier iOS Widget",
+                summary: "API Bar is now Harness Sync. It adds T3 Code sync and makes the iOS widget reliable across several Macs.",
+                highlights: [
+                    "Renamed from API Bar to Harness Sync",
+                    "T3 Code settings sync alongside OMP, Pi and OpenCode",
+                    "Widget shows runway for both rows, in hours and minutes when under a day",
+                    "Widget rows no longer disappear, and CodexBar mirrors the Mac you are using"
+                ],
+                notes: """
+## Harness Sync 0.9.0
+
+API Bar is now **Harness Sync**.
+
+---
+
+### ✨ What's New in 0.9.0
+
+#### 1. 🏷️ New Name
+• The app, bundle and scripts are now called Harness Sync.
+
+#### 2. 🔄 T3 Code Sync
+• T3 Code settings sync through iCloud alongside OMP, Pi and OpenCode.
+• Machine-specific files and T3 credentials are never synced.
+
+#### 3. 📱 iOS Widget
+• Both rows show runway, e.g. "7d runway". Under a day it shows hours and minutes.
+• The CodexBar row mirrors the Mac you are actively using.
+• The CodexBar and Harness Sync rows no longer disappear during a sync.
+• Percentages use the app's colour rules instead of matching the bar.
+• More space above the Harness Sync section.
+
+#### 4. ✅ Onboarding
+• New iCloud permission step, with matching controls in Settings.
+• Fixed placement in Thaw's hidden menu bar section.
+"""
+            ),
+            ChangelogEntry(
+                version: "0.8.4",
                 releaseDate: "November 12, 2026",
-                title: "API Bar 0.5.10 — Compact Runway Labels",
+                title: "API Bar 0.8.4 — Compact Runway Labels",
                 summary: "The widget's CodexBar card now shows the same compact \"· 2d runway\" label as API Bar's own provider cards, instead of the verbose pacing sentence.",
                 highlights: [
                     "Compact runway label: the CodexBar card sub-label now reads \"· 2d runway\", exactly matching API Bar's balance cards",
                     "All devices converge: multi-device template conflicts over the Scriptable widget are resolved as every Mac updates"
                 ],
                 notes: """
-## API Bar 0.5.10
+## API Bar 0.8.4
 
 The CodexBar card in the iOS widget now matches API Bar's own card style.
 
 ---
 
-### ✨ What's New in 0.5.10
+### ✨ What's New in 0.8.4
 
 #### 1. 🎯 Compact Runway Label
 • The CodexBar card sub-label now reads "· 2d runway" — the exact format API Bar's own provider cards use.
@@ -185,9 +224,9 @@ The CodexBar card in the iOS widget now matches API Bar's own card style.
 """
             ),
             ChangelogEntry(
-                version: "0.5.9",
+                version: "0.8.3",
                 releaseDate: "November 12, 2026",
-                title: "API Bar 0.5.9 — CodexBar Token Pacing in the iOS Widget",
+                title: "API Bar 0.8.3 — CodexBar Token Pacing in the iOS Widget",
                 summary: "Replaces dollar summaries in the widget's CodexBar card with API Bar-style token pacing (tokens per day and a spend-based runway), since not all models publish pricing outputs in CodexBar.",
                 highlights: [
                     "Token pacing for CodexBar cards: providers with a per-day token ledger (Mistral) now show \"24.1M tokens per day - Runs out in 2 days\" instead of dollar summaries",
@@ -196,13 +235,13 @@ The CodexBar card in the iOS widget now matches API Bar's own card style.
                     "Pure derivation module: CodexBar pacing logic is extracted into a UI-free source compiled by the test suite"
                 ],
                 notes: """
-## API Bar 0.5.9
+## API Bar 0.8.3
 
 The widget's CodexBar card now paces in tokens instead of dollars.
 
 ---
 
-### ✨ What's New in 0.5.9
+### ✨ What's New in 0.8.3
 
 #### 1. 📈 API Bar-Style Token Pacing
 • CodexBar providers that publish a per-day token ledger (Mistral) now display \"24.1M tokens per day - Runs out in 2 days\" in the widget card.
@@ -215,9 +254,9 @@ The widget's CodexBar card now paces in tokens instead of dollars.
 """
             ),
             ChangelogEntry(
-                version: "0.5.7",
+                version: "0.8.1",
                 releaseDate: "November 12, 2026",
-                title: "API Bar 0.5.7 — True Top-Up Cycle Baselines & Multi-Device Baseline Safety",
+                title: "API Bar 0.8.1 — True Top-Up Cycle Baselines & Multi-Device Baseline Safety",
                 summary: "Derives Heimdallm's 100% baseline from the actual top-up cycle (newest deposit + unspent carryover) instead of lifetime deposits, remembers it across ledger windows, and stops stale devices from clobbering fresh baselines over iCloud.",
                 highlights: [
                     "Server-derived cycle baselines: a $5 top-up on a $0.35 leftover now correctly reads 100% at $5.35, not the lifetime $15 deposited",
@@ -226,13 +265,13 @@ The widget's CodexBar card now paces in tokens instead of dollars.
                     "Removed hardcoded baseline repair that pinned a previous cycle's total over new top-ups"
                 ],
                 notes: """
-## API Bar 0.5.7
+## API Bar 0.8.1
 
 This release fixes Heimdallm baselines after a top-up and hardens multi-device baseline synchronization.
 
 ---
 
-### ✨ What's New in 0.5.7
+### ✨ What's New in 0.8.1
 
 #### 1. 💳 True Top-Up Cycle Baselines
 • The 100% reference is now the current cycle total: newest deposit plus whatever was left unspent before it.
@@ -248,9 +287,9 @@ This release fixes Heimdallm baselines after a top-up and hardens multi-device b
 """
             ),
             ChangelogEntry(
-                version: "0.5.6",
+                version: "0.8.0",
                 releaseDate: "November 11, 2026",
-                title: "API Bar 0.5.6 — Scriptable iOS Widget Sync, CodexBar Live Limits & System Light/Dark Mode",
+                title: "API Bar 0.8.0 — Scriptable iOS Widget Sync, CodexBar Live Limits & System Light/Dark Mode",
                 summary: "Introduces full Scriptable iOS widget sync with live menu bar mirroring, real-time CodexBar active usage tracking, iOS system Light/Dark appearance adaptation, monochrome vector menu bar icons, and unified value formatting.",
                 highlights: [
                     "Scriptable iOS widget: live bidirectional iCloud sync mirroring visible menu bar balances directly to your iPhone Home Screen",
@@ -262,13 +301,13 @@ This release fixes Heimdallm baselines after a top-up and hardens multi-device b
                     "Consolidated settings UI: checkmark toggles and automated template setup for Scriptable and agent sync"
                 ],
                 notes: """
-## API Bar 0.5.6
+## API Bar 0.8.0
 
 This release introduces comprehensive iPhone Home Screen widget support through Scriptable, connects real-time CodexBar quota tracking, adapts dynamically to iOS system appearance, and polishes menu bar mirroring.
 
 ---
 
-### ✨ What's New in 0.5.6
+### ✨ What's New in 0.8.0
 
 #### 1. 📱 Scriptable iOS Widget Sync via iCloud
 • Mirror your active API Bar balances directly to iOS Home Screen widgets (Small, Medium, and Large).
@@ -291,9 +330,9 @@ This release introduces comprehensive iPhone Home Screen widget support through 
 """
             ),
             ChangelogEntry(
-                version: "0.5.5",
+                version: "0.7.1",
                 releaseDate: "November 10, 2026",
-                title: "API Bar 0.5.5 — Pure Cookie Auth for InferHub, Multi-Device Sync Hardening & Baseline Protection",
+                title: "API Bar 0.7.1 — Pure Cookie Auth for InferHub, Multi-Device Sync Hardening & Baseline Protection",
                 summary: "Removes obsolete manual API key fields for InferHub in favor of seamless cookie session detection, synchronizes provider enabled states across devices, prevents settings race conditions from unmerging icons, and locks Heimdallm reload baselines against remote sync downgrades.",
                 highlights: [
                     "InferHub cookie-first configuration: removed redundant manual API key field in Settings",
@@ -302,13 +341,13 @@ This release introduces comprehensive iPhone Home Screen widget support through 
                     "Settings modification locking: prevents background sync pushes from overwriting merged menu bar icon state"
                 ],
                 notes: """
-## API Bar 0.5.5
+## API Bar 0.7.1
 
 This release streamlines InferHub configuration to pure cookie session detection, hardens multi-device iCloud sync against race conditions, and guarantees baseline stability across devices.
 
 ---
 
-### ✨ What's New in 0.5.5
+### ✨ What's New in 0.7.1
 
 #### 1. 🍪 Seamless InferHub Cookie Session Detection
 • Removed the obsolete manual API key input field from Settings; InferHub authenticates directly via your browser dashboard session cookies.
@@ -327,9 +366,9 @@ This release streamlines InferHub configuration to pure cookie session detection
 """
             ),
             ChangelogEntry(
-                version: "0.5.4",
+                version: "0.7.0",
                 releaseDate: "November 9, 2026",
-                title: "API Bar 0.5.4 — InferHub Support, Static Top-Up Baselines & Sync Stability",
+                title: "API Bar 0.7.0 — InferHub Support, Static Top-Up Baselines & Sync Stability",
                 summary: "Adds native support for InferHub with browser session auth and 24h burn-rate pacing, keeps Heimdallm top-up baselines static across spend-downs, and hardens iCloud sync state transitions.",
                 highlights: [
                     "InferHub (inferhub.dev) AI aggregation platform balance and burn-rate pacing",
@@ -341,13 +380,13 @@ This release streamlines InferHub configuration to pure cookie session detection
                     "Formalized explicit state machines for providers, updater, iCloud sync, and menu bar presentation"
                 ],
                 notes: """
-## API Bar 0.5.4
+## API Bar 0.7.0
 
 This release adds native support for InferHub (inferhub.dev), keeps Heimdallm top-up baselines strictly static across spend-down cycles and credit hold releases, and hardens iCloud multi-device sync state transitions.
 
 ---
 
-### ✨ What's New in 0.5.4
+### ✨ What's New in 0.7.0
 
 #### 1. ⚡️ InferHub (inferhub.dev) Support
 • Connects to InferHub using browser session cookies or API keys.
@@ -366,9 +405,9 @@ This release adds native support for InferHub (inferhub.dev), keeps Heimdallm to
 """
             ),
             ChangelogEntry(
-                version: "0.5.3",
+                version: "0.6.0",
                 releaseDate: "November 8, 2026",
-                title: "API Bar 0.5.3 — OMP Sync, Heimdallm Refinements & Pacing Fixes",
+                title: "API Bar 0.6.0 — OMP Sync, Heimdallm Refinements & Pacing Fixes",
                 summary: "Adds bi-directional OMP iCloud sync, pauses Heimdallm by default, prevents credit hold baseline inflation, fixes Refuseless runway pacing calculations, and improves legibility.",
                 highlights: [
                     "OMP (Oh-My-Prompt) iCloud Drive configuration and credential vault synchronization",
@@ -380,13 +419,13 @@ This release adds native support for InferHub (inferhub.dev), keeps Heimdallm to
                     "App updater same-version rebuild detection allowing updates to refreshed release builds"
                 ],
                 notes: """
-## API Bar 0.5.3
+## API Bar 0.6.0
 
 This release introduces bi-directional OMP (Oh-My-Prompt) iCloud sync, refines Heimdallm onboarding and balance accounting, fixes Refuseless pacing calculations, enhances percentage badge readability, and allows the in-app updater to install refreshed builds seamlessly.
 
 ---
 
-### ✨ What's New in 0.5.3
+### ✨ What's New in 0.6.0
 
 #### 1. ☁️ OMP (Oh-My-Prompt) iCloud Sync
 • Synchronizes model configurations and prompt settings configured in OMP (`~/.omp/agent`) across all your Macs via iCloud Drive.
@@ -409,9 +448,9 @@ This release introduces bi-directional OMP (Oh-My-Prompt) iCloud sync, refines H
 """
             ),
             ChangelogEntry(
-                version: "0.5.2",
+                version: "0.5.0",
                 releaseDate: "November 6, 2026",
-                title: "API Bar 0.5.2 — Heimdallm, Scrollable Onboarding & Browser Connect-All",
+                title: "API Bar 0.5.0 — Heimdallm, Scrollable Onboarding & Browser Connect-All",
                 summary: "Adds native Heimdallm platform support, real-time search and scrolling in onboarding, and fixes Keychain safe-storage authorization for browser connect-all.",
                 highlights: [
                     "Heimdallm (heimdallm.com) AI platform credits read directly from browser session",
@@ -421,13 +460,13 @@ This release introduces bi-directional OMP (Oh-My-Prompt) iCloud sync, refines H
                     "Refuseless balance display refinement prioritizing pure dollar balance"
                 ],
                 notes: """
-## API Bar 0.5.2
+## API Bar 0.5.0
 
 This release adds Heimdallm platform credit tracking, introduces searchable and scrollable provider selection in onboarding, and ensures browser session importing connects reliably.
 
 ---
 
-### ✨ What's New in 0.5.2
+### ✨ What's New in 0.5.0
 
 #### 1. 🆕 Heimdallm (heimdallm.com)
 • Tracks AI platform credits from your signed-in browser session across heimdallm.com and staging.
@@ -446,9 +485,9 @@ This release adds Heimdallm platform credit tracking, introduces searchable and 
 """
             ),
             ChangelogEntry(
-                version: "0.5.1",
+                version: "0.4.0",
                 releaseDate: "November 5, 2026",
-                title: "API Bar 0.5.1 — Unaligned, Yeta, Pause Providers & Menu Bar Stability",
+                title: "API Bar 0.4.0 — Unaligned, Yeta, Pause Providers & Menu Bar Stability",
                 summary: "Adds Unaligned and Yeta provider support, lets you pause providers instead of deleting them, and stops menu bar icons from being recreated so Thaw, Bartender and Ice keep your layout.",
                 highlights: [
                     "Unaligned (unaligned.pw) prepaid balance from your signed-in dashboard session",
@@ -461,13 +500,13 @@ This release adds Heimdallm platform credit tracking, introduces searchable and 
                     "Release gate now audits the tree for credentials, personal paths and personal emails"
                 ],
                 notes: """
-## API Bar 0.5.1
+## API Bar 0.4.0
 
 This release adds two providers, introduces pausing instead of deleting, and makes API Bar behave properly with menu bar managers.
 
 ---
 
-### ✨ What's New in 0.5.1
+### ✨ What's New in 0.4.0
 
 #### 1. 🆕 Unaligned (unaligned.pw)
 • Reads your prepaid balance from the signed-in dashboard using your browser session, like the other providers.
@@ -506,9 +545,9 @@ This release adds two providers, introduces pausing instead of deleting, and mak
 """,
             ),
             ChangelogEntry(
-                version: "0.5.0",
+                version: "0.3.0",
                 releaseDate: "November 3, 2026",
-                title: "API Bar 0.5.0 — Token Burn Rate Pacing, OpenCode Sync & Lutheos",
+                title: "API Bar 0.3.0 — Token Burn Rate Pacing, OpenCode Sync & Lutheos",
                 summary: "Token burn rate & runway pacing for Refuseless & Lutheos, dynamic top-up detection, OpenCode iCloud sync, and 4-tier percentage styling.",
                 highlights: [
                     "Token burn rate pacing & runway calculations (e.g. 1.9M tokens/day - Runs out in 3 days)",
@@ -519,13 +558,13 @@ This release adds two providers, introduces pausing instead of deleting, and mak
                     "Hardened self-updating with same-version refresh detection and in-app redownloads"
                 ],
                 notes: """
-## API Bar 0.5.0
+## API Bar 0.3.0
 
 A major feature, design, and resilience update introducing native Lutheos.com & Refuseless token burn rate pacing, dynamic top-up recognition, OpenCode iCloud sync, a 4-tier traffic-light percentage color scale, matching brand accent progress bars, unified percentage calculations, rich in-app release notes, and hardened self-updating with seamless auto-relaunch.
 
 ---
 
-### ✨ What's New in 0.5.0
+### ✨ What's New in 0.3.0
 
 #### 1. ⚡️ Token Burn Rate & Runway Pacing (Refuseless & Lutheos)
 • **Real-Time Pacing Calculations**: Calculates actual consumption velocity and runway directly in the balance card (e.g. `1.9M tokens per day - Runs out in 3 days` or `500K tokens per day - Runs out in 1 day`).
@@ -555,9 +594,9 @@ A major feature, design, and resilience update introducing native Lutheos.com & 
 """
             ),
             ChangelogEntry(
-                version: "0.4.9",
+                version: "0.2.0",
                 releaseDate: "November 2, 2026",
-                title: "API Bar 0.4.9 — Paper Design System, Venice AI & Dominant Browser Discovery",
+                title: "API Bar 0.2.0 — Paper Design System, Venice AI & Dominant Browser Discovery",
                 summary: "Full Paper design system rollout, high-contrast monochrome branding, dominant browser auto-detection, and Venice AI consumption tracking.",
                 highlights: [
                     "Full Paper Design System tokens across menu bar popover, badges, and onboarding",
@@ -567,13 +606,13 @@ A major feature, design, and resilience update introducing native Lutheos.com & 
                     "Multi-tier resilient auto-updater with GitHub REST API, Atom feed, and web redirect fallbacks"
                 ],
                 notes: """
-## API Bar 0.4.9
+## API Bar 0.2.0
 
 A major design, provider, and compatibility update bringing the Paper design system, dominant browser discovery, Venice AI, and multi-tier resilient auto-updating.
 
 ---
 
-### ✨ What's New in 0.4.9
+### ✨ What's New in 0.2.0
 
 #### 1. 🎨 Paper Design System & High-Contrast Branding
 • **Paper Tokens**: Full Paper design tokens across menubar cards, provider selector tabs, and onboarding.
@@ -599,9 +638,9 @@ A major design, provider, and compatibility update bringing the Paper design sys
 """
             ),
             ChangelogEntry(
-                version: "0.4.8",
+                version: "0.1.1",
                 releaseDate: "November 1, 2026",
-                title: "API Bar 0.4.8 — Version Identification & Refuseless Microdollar Units",
+                title: "API Bar 0.1.1 — Version Identification & Refuseless Microdollar Units",
                 summary: "Fixed Refuseless microdollar units parsing and ledger baseline calculation, bundle identifier cleanup, and robust build identification.",
                 highlights: [
                     "Fixed Refuseless micro-dollar calculation ($23.47 / $25.00 instead of $24M)",
@@ -610,9 +649,9 @@ A major design, provider, and compatibility update bringing the Paper design sys
                     "Dynamic bundle version identification in About dialog"
                 ],
                 notes: """
-## API Bar 0.4.8
+## API Bar 0.1.1
 
-This build fixes a versioning problem: every earlier build reported 0.4.7, so an older copy was indistinguishable from a newer one and the updater could never tell them apart.
+This build fixes a versioning problem: every earlier build reported 0.1.0, so an older copy was indistinguishable from a newer one and the updater could never tell them apart.
 
 ---
 
@@ -627,9 +666,9 @@ This build fixes a versioning problem: every earlier build reported 0.4.7, so an
 """
             ),
             ChangelogEntry(
-                version: "0.4.7",
+                version: "0.1.0",
                 releaseDate: "October 31, 2026",
-                title: "API Bar 0.4.7 — Initial Public Release",
+                title: "API Bar 0.1.0 — Initial Public Release",
                 summary: "First public release of API Bar, the native macOS menu-bar companion for AI providers including Vertex AI, Fireworks, Cerebras, and Crowbot.",
                 highlights: [
                     "Native tracking for Google Cloud / Vertex AI, Fireworks AI, Cerebras, and Crowbot",
@@ -639,7 +678,7 @@ This build fixes a versioning problem: every earlier build reported 0.4.7, so an
                     "100% on-device and private macOS Keychain storage"
                 ],
                 notes: """
-## API Bar 0.4.7
+## API Bar 0.1.0
 
 First public release. A native macOS menu bar companion for tracking AI provider balances alongside CodexBar.
 
