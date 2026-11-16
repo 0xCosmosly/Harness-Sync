@@ -141,7 +141,7 @@ public final class AppUpdater: ObservableObject {
     private var lastCheckedDate: Date?
 
     public var currentVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.9.0"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.5.0"
     }
 
     public var isSemverNewerAvailable: Bool {
