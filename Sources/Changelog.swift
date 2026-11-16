@@ -117,7 +117,11 @@ public final class ChangelogManager: ObservableObject {
 
                 // Extract summary
                 let lines = rawBody.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-                let summary = lines.first(where: { !$0.hasPrefix("#") && !$0.hasPrefix("-") && !$0.hasPrefix("•") }) ?? "Release updates and improvements."
+                let summaryLine = lines.first(where: {
+                    !$0.hasPrefix("#") && !$0.hasPrefix("-") && !$0.hasPrefix("•") && !$0.hasPrefix("*")
+                        && !$0.hasPrefix("_") && !$0.hasPrefix("**Full changelog")
+                })
+                let summary = summaryLine?.replacingOccurrences(of: "**", with: "") ?? "Release updates and improvements."
 
                 // Extract highlights
                 var highlights: [String] = []
@@ -142,12 +146,24 @@ public final class ChangelogManager: ObservableObject {
             }
 
             if !remoteEntries.isEmpty {
-                // Merge remote entries with built-in entries to keep rich summaries and offline safety
-                var merged = remoteEntries
-                for builtIn in Self.builtInEntries() {
-                    if !merged.contains(where: { $0.version == builtIn.version }) {
-                        merged.append(builtIn)
-                    }
+                // Built-in entries win when both exist: they keep the original
+                // release date and a written summary. GitHub dates can be newer
+                // than the release (renumbered releases were re-published).
+                let builtIns = Self.builtInEntries()
+                var merged = builtIns.map { builtIn -> ChangelogEntry in
+                    guard let remote = remoteEntries.first(where: { $0.version == builtIn.version }) else { return builtIn }
+                    return ChangelogEntry(
+                        version: builtIn.version,
+                        releaseDate: builtIn.releaseDate,
+                        title: builtIn.title,
+                        summary: builtIn.summary,
+                        highlights: builtIn.highlights,
+                        notes: builtIn.notes,
+                        releaseURL: remote.releaseURL ?? builtIn.releaseURL
+                    )
+                }
+                for remote in remoteEntries where !merged.contains(where: { $0.version == remote.version }) {
+                    merged.append(remote)
                 }
                 merged.sort { AppUpdater.isVersion($0.version, newerThan: $1.version) }
                 self.entries = merged

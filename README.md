@@ -17,13 +17,13 @@
 
 <p align="center">
   <strong>Never run out of AI credits mid-prompt or lose your coding agent configurations when switching Macs.</strong><br />
-  <b>Harness Sync</b> (formerly <i>API Bar</i>) lives in your macOS menu bar, continuously displaying live credit balances, token burn velocity, and runway estimates for all your AI inference providers—while seamlessly synchronizing your AI coding agent harnesses (OpenCode, Pi, and OMP) across your machines via your private iCloud Drive.
+  <b>Harness Sync</b> (formerly <i>API Bar</i>) lives in your macOS menu bar, continuously displaying live credit balances, token burn velocity, and runway estimates for all your AI inference providers—while seamlessly synchronizing your AI coding agent harnesses (OpenCode, Pi, OMP, and T3 Code) across your machines via your private iCloud Drive.
 </p>
 
 <p align="center">
-  <img src="docs/images/popovers_showcase.png" width="800" alt="Harness Sync Menu Bar Overview & Detailed Balance Card" />
+  <img src="docs/images/popovers_showcase.png" width="800" alt="Harness Sync menu bar overview and Sync tab" />
   <br />
-  <em><b>Menu Bar Experience</b>: Unified multi-provider overview (left) alongside detailed individual runway and pacing inspection (right).</em>
+  <em><b>Menu Bar Experience</b>: Every provider with its runway at a glance (left) and the Sync tab showing each harness (right).</em>
 </p>
 
 ---
@@ -93,7 +93,7 @@ When you first launch the app, a 3-step setup tour guides you through:
 <p align="center">
   <img src="docs/images/overview_card.png" width="420" alt="Overview Card" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/images/balance_card.png" width="420" alt="Detailed Balance Card" />
+  <img src="docs/images/sync_tab.png" width="420" alt="Sync Tab" />
 </p>
 
 ### Understanding Gauges & Metrics
