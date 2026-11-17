@@ -1345,8 +1345,8 @@ func updaterChecks() async throws {
 
     func releaseJSON(tag: String, name: String, zipSize: Int, updated: String = "2026-11-05T12:00:00Z") -> String {
         """
-        {"tag_name":"\(tag)","name":"\(name)","body":"notes for \(tag)","html_url":"https://github.com/0xCosmosly/Harness-Sync/releases/tag/\(tag)",
-         "assets":[{"name":"HarnessSync-app.zip","size":\(zipSize),"browser_download_url":"https://github.com/0xCosmosly/Harness-Sync/releases/download/\(tag)/HarnessSync-app.zip","updated_at":"\(updated)"}]}
+        {"tag_name":"\(tag)","name":"\(name)","body":"notes for \(tag)","html_url":"https://github.com/0xCosmosly/harness-sync/releases/tag/\(tag)",
+         "assets":[{"name":"HarnessSync-app.zip","size":\(zipSize),"browser_download_url":"https://github.com/0xCosmosly/harness-sync/releases/download/\(tag)/HarnessSync-app.zip","updated_at":"\(updated)"}]}
         """
     }
 
@@ -1392,11 +1392,11 @@ func updaterChecks() async throws {
 
     // A release without a zip asset still yields a deterministic download URL.
     let noAsset = """
-    {"tag_name":"v1.0.0","name":"Harness Sync 1.0.0","body":"x","html_url":"https://github.com/0xCosmosly/Harness-Sync/releases/tag/v1.0.0","assets":[]}
+    {"tag_name":"v1.0.0","name":"Harness Sync 1.0.0","body":"x","html_url":"https://github.com/0xCosmosly/harness-sync/releases/tag/v1.0.0","assets":[]}
     """
     setenv("HARNESSSYNC_UPDATER_ENDPOINT", try serve(noAsset, at: "noasset"), 1)
     let fallback = try await updater.fetchReleaseInfo()
-    precondition(fallback.downloadURL?.absoluteString == "https://github.com/0xCosmosly/Harness-Sync/releases/download/v1.0.0/HarnessSync-app.zip",
+    precondition(fallback.downloadURL?.absoluteString == "https://github.com/0xCosmosly/harness-sync/releases/download/v1.0.0/HarnessSync-app.zip",
                  "Missing asset must fall back to the conventional zip URL, got \(fallback.downloadURL?.absoluteString ?? "nil")")
 
     // A broken fixture must fail loudly rather than reporting an update.

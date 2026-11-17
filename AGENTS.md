@@ -1,7 +1,7 @@
 # 🤖 Agent Guide & Architecture Specification
 
 > **For AI Coding Agents & Automated Planners** (Gemini, Cursor, Codex, Antigravity, Aider, OpenCode, Pi).  
-> This file outlines architectural invariants, build/test protocols, security constraints, and extension patterns for **Harness Sync** (repository: `0xCosmosly/Harness-Sync`).
+> This file outlines architectural invariants, build/test protocols, security constraints, and extension patterns for **Harness Sync** (repository: `0xCosmosly/harness-sync`).
 
 ---
 
@@ -137,7 +137,7 @@ Compile the native release binary and assemble the application bundle:
 ### Git Commit Guidelines
 - Commit author: `0xCosmosly <254995568+0xCosmosly@users.noreply.github.com>`.
 - Use Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`).
-- Repository URL: `https://github.com/0xCosmosly/Harness-Sync.git`.
+- Repository URL: `https://github.com/0xCosmosly/harness-sync.git`.
 
 ---
 
@@ -188,7 +188,7 @@ Compile the native release binary and assemble the application bundle:
 | `Sources/SyncChangeLog.swift` | Precise YAML/JSON diffing, provider change summaries, and relative time formatting. |
 | `Sources/CodexBarPacing.swift` | Spend-based runway calculations and token burn velocity derivation for CodexBar. |
 | `Sources/Changelog.swift` | Offline-first multi-version changelog viewer with Markdown formatting. |
-| `Sources/AppUpdater.swift` | In-app self-updater targeting `0xCosmosly/Harness-Sync` GitHub Releases. |
+| `Sources/AppUpdater.swift` | In-app self-updater targeting `0xCosmosly/harness-sync` GitHub Releases. |
 
 ---
 

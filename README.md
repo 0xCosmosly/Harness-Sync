@@ -11,7 +11,7 @@
   <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.0-orange?logo=swift&logoColor=white" alt="Swift 6.0" /></a>
   <a href="https://developer.apple.com"><img src="https://img.shields.io/badge/Architecture-Apple%20Silicon%20(arm64)-purple" alt="Apple Silicon" /></a>
   <a href="#-privacy--security"><img src="https://img.shields.io/badge/Privacy-100%25%20Local%20%C2%B7%20Zero%20Telemetry-success" alt="100% Local" /></a>
-  <a href="https://github.com/0xCosmosly/Harness-Sync/releases/latest"><img src="https://img.shields.io/github/v/release/0xCosmosly/Harness-Sync?label=Download&color=brightgreen" alt="Latest Release" /></a>
+  <a href="https://github.com/0xCosmosly/harness-sync/releases/latest"><img src="https://img.shields.io/github/v/release/0xCosmosly/harness-sync?label=Download&color=brightgreen" alt="Latest Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-lightgrey" alt="MIT License" /></a>
 </p>
 
@@ -66,7 +66,7 @@
 
 ### 1. Download & Install
 
-1. Download the latest **`APIBar-app.zip`** from [GitHub Releases](https://github.com/0xCosmosly/Harness-Sync/releases/latest).
+1. Download the latest **`APIBar-app.zip`** from [GitHub Releases](https://github.com/0xCosmosly/harness-sync/releases/latest).
 2. Unzip and drag **`Harness Sync.app`** into your macOS **`/Applications`** folder.
 3. Open **Harness Sync** from Applications or Spotlight.
 
